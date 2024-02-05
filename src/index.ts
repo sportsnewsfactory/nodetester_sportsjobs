@@ -16,6 +16,7 @@ import fs from 'fs';
 import axios from 'axios';
 import { EDITIONS } from './functions/EDITIONS';
 import { FOLDERS } from './functions/FOLDERS';
+import { PATHS } from './functions/PATHS';
 
 async function main() {
     //console.log('hi');
@@ -24,8 +25,10 @@ async function main() {
 
     try {
         const editions = await EDITIONS.getAll(DB);
-        const folders = await FOLDERS.getAll(DB);
         const renderMachine: RenderMachine = await identifyRenderMachine(DB);
+        const absoluteFolderPaths: {
+            [key in DB.Jobs.FolderName]: string;
+        } = await FOLDERS.getAll(DB, renderMachine);
 
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
@@ -54,24 +57,32 @@ async function main() {
         // );
 
         // verify all exist
-        const narrationFolderExists = fs.existsSync(narrationFolderPath);
-        if (!narrationFolderExists)
-            throw `Narration folder path does not exist: ${narrationFolderPath}`;
-        const backgroundFolderExists = fs.existsSync(backgroundFolderPath);
-        if (!backgroundFolderExists)
-            throw `Background folder path does not exist: ${backgroundFolderPath}`;
-        const logoFolderExists = fs.existsSync(logoFolderPath);
-        if (!logoFolderExists)
-            throw `Logo folder path does not exist: ${logoFolderPath}`;
+        // const narrationFolderExists = fs.existsSync(narrationFolderPath);
+        // if (!narrationFolderExists)
+        //     throw `Narration folder path does not exist: ${narrationFolderPath}`;
+        // const backgroundFolderExists = fs.existsSync(backgroundFolderPath);
+        // if (!backgroundFolderExists)
+        //     throw `Background folder path does not exist: ${backgroundFolderPath}`;
+        // const logoFolderExists = fs.existsSync(logoFolderPath);
+        // if (!logoFolderExists)
+        //     throw `Logo folder path does not exist: ${logoFolderPath}`;
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
         let trimSyncData: AE.Json.TS.Sequence = [];
-        const paths: AE.Json.AbsolutePath.Obj = {
-            exportFile: `${renderMachine.drive_path}Sports/S_Studio/mixed edition test export/export test.mp4`,
-            projectFile: `${renderMachine.qnap_path}Studio/Sports/S_Victor Projects/S_V_AE Projects/General sports reduced folder collected/General sports reduced AE241.aep`,
-            projectSaveFile: `${renderMachine.drive_path}Sports/S_Studio/mixed edition test save/save test.aep`,
-        };
+        // const paths: AE.Json.AbsolutePath.Obj = {
+        //     exportFile: `${renderMachine.drive_path}Sports/S_Studio/mixed edition test export/export test.mp4`,
+        //     projectFile: `${renderMachine.qnap_path}Studio/Sports/S_Victor Projects/S_V_AE Projects/General sports reduced folder collected/General sports reduced AE241.aep`,
+        //     projectSaveFile: `${renderMachine.drive_path}Sports/S_Studio/mixed edition test save/save test.aep`,
+        // };
+
+        for (const edition of editions) {
+            // export file, project file and project save file
+            const paths: AE.Json.AbsolutePath.Obj = PATHS.getAll(
+                absoluteFolderPaths,
+                edition
+            );
+        }
 
         // console.log(`renderMachine: ${JSON.stringify(renderMachine)}`);
         // return;

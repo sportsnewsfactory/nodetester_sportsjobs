@@ -83,14 +83,14 @@ export namespace AE {
         };
 
         export type DebugData = {
-            saveExportClose:SaveExportClose
-            dbgLevel:number//0 = no debugger, the higher the number the more alerts will happen
-        }
-        
+            saveExportClose: SaveExportClose;
+            dbgLevel: number; //0 = no debugger, the higher the number the more alerts will happen
+        };
+
         export type SaveExportClose = {
-            isSave:boolean,
-            isExport:boolean,
-            isClose:boolean
-        }
+            isSave: boolean;
+            isExport: boolean;
+            isClose: boolean;
+        };
     }
 }
