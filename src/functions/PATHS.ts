@@ -23,15 +23,9 @@ export const PATHS = {
             ),
         };
 
-        for (const pathKey in paths) {
-            const pathExists = fs.existsSync(
-                paths[pathKey as keyof AE.Json.AbsolutePath.Obj]
-            );
-            if (!pathExists)
-                throw `Path does not exist: ${
-                    paths[pathKey as keyof AE.Json.AbsolutePath.Obj]
-                }`;
-        }
+        const projectFilePathExists = fs.existsSync(paths.projectFile);
+        if (!projectFilePathExists)
+            throw `projectFilePathExists does not exist: ${paths.projectFile}`;
 
         return paths;
     },

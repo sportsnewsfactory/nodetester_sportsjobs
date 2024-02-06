@@ -35,23 +35,6 @@ async function main() {
         let files: AE.Json.FileImport[] = [];
         let trimSyncData: AE.Json.TS.Sequence = [];
 
-        const dbNameToAELayerNameMappingScheme: DB.Jobs.Mapping.Scheme = {
-            // texts per item
-            headline: '`Headline${item.id}`', // item.headline
-            sub_headline: '`headlinetext${item.id}1`', // item.sub_headline
-
-            // texts per standing
-            team_name: '`ranking-name-team${item.id}-${standing.position}`', // standing.team_name
-            position: '`ranking-stat1-team${item.id}-${standing.position}`', // standing.position
-            wins: '`ranking-stat2-team${item.id}-${standing.position}`', // standing.wins
-            losses: '`ranking-stat3-team${item.id}-${standing.position}`', // standing.losses
-
-            // files
-            narration: '`News-Narration${item.id}`', // item.narration
-            background: '`News-BG${item.id}`', // item.background
-            logo: '`News-logo${item.id}`', // item.logo
-        };
-
         const standingTextKeys: DB.Jobs.Mapping.StandingTextKey[] = [
             'team_name',
             'position',
@@ -67,6 +50,40 @@ async function main() {
             'background',
             'logo',
         ];
+
+        const mappingFuncs = {
+            headline: (item: DB.Item.JoinedNews) => `Headline${item.id}`,
+            sub_headline: (item: DB.Item.JoinedNews) =>
+                `headlinetext${item.id}1`,
+            team_name: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
+                `ranking-name-team${item.id}-${standing.position}`,
+            position: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
+                `ranking-stat1-team${item.id}-${standing.position}`,
+            wins: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
+                `ranking-stat2-team${item.id}-${standing.position}`,
+            losses: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
+                `ranking-stat3-team${item.id}-${standing.position}`,
+            narration: (item: DB.Item.JoinedNews) => `News-Narration${item.id}`,
+            background: (item: DB.Item.JoinedNews) => `News-BG${item.id}`,
+            logo: (item: DB.Item.JoinedNews) => `News-logo${item.id}`,
+        };
+
+        // const dbNameToAELayerNameMappingScheme: DB.Jobs.Mapping.Scheme = {
+        //     // texts per item
+        //     headline: '`Headline${item.id}`', // item.headline
+        //     sub_headline: '`headlinetext${item.id}1`', // item.sub_headline
+
+        //     // texts per standing
+        //     team_name: '`ranking-name-team${item.id}-${standing.position}`', // standing.team_name
+        //     position: '`ranking-stat1-team${item.id}-${standing.position}`', // standing.position
+        //     wins: '`ranking-stat2-team${item.id}-${standing.position}`', // standing.wins
+        //     losses: '`ranking-stat3-team${item.id}-${standing.position}`', // standing.losses
+
+        //     // files
+        //     narration: '`News-Narration${item.id}`', // item.narration
+        //     background: '`News-BG${item.id}`', // item.background
+        //     logo: '`News-logo${item.id}`', // item.logo
+        // };
 
         const edition = editions[0];
         //for (const edition of editions) {
@@ -118,11 +135,16 @@ async function main() {
             // starting with the texts of the news item (headline, sub_headline)
 
             for (const itemTextKey in itemTextKeys) {
-                const textLayerName = eval(
-                    dbNameToAELayerNameMappingScheme[
-                        itemTextKey as keyof typeof dbNameToAELayerNameMappingScheme
-                    ]
-                );
+                const textLayerName =
+                    mappingFuncs[itemTextKey as DB.Jobs.Mapping.ItemFileKey](
+                        item
+                    );
+
+                // const textLayerName = eval(
+                //     dbNameToAELayerNameMappingScheme[
+                //         itemTextKey as keyof typeof dbNameToAELayerNameMappingScheme
+                //     ]
+                // );
                 const text: AE.Json.TextImport = {
                     text: item[itemTextKey as keyof DB.Item.News],
                     textLayerName,
@@ -133,21 +155,27 @@ async function main() {
 
             // now let's generate the files
             for (const itemFileKey of itemFileKeys) {
-                const absoluteFilePath = path.resolve(
-                    absoluteFolderPaths[
-                        itemFileKey as keyof typeof absoluteFolderPaths
-                    ],
-                    item[itemFileKey as keyof DB.Item.News]
-                );
+                const absoluteFilePath = path
+                    .resolve(
+                        absoluteFolderPaths[
+                            itemFileKey as keyof typeof absoluteFolderPaths
+                        ],
+                        item[itemFileKey as keyof DB.Item.News]
+                    )
+                    .replace(/\\/g, '/');
                 if (!fs.existsSync(absoluteFilePath))
                     throw `File path does not exist: ${absoluteFilePath}`;
                 files.push({
                     absolutePath: absoluteFilePath,
-                    compositionName: eval(
-                        dbNameToAELayerNameMappingScheme[
-                            itemFileKey as keyof typeof dbNameToAELayerNameMappingScheme
-                        ]
-                    ),
+                    // compositionName: eval(
+                    //     dbNameToAELayerNameMappingScheme[
+                    //         itemFileKey as keyof typeof dbNameToAELayerNameMappingScheme
+                    //     ]
+                    // ),
+                    compositionName:
+                        mappingFuncs[
+                            itemFileKey as DB.Jobs.Mapping.ItemFileKey
+                        ](item),
                     resizeAction: 'fitToComp',
                 });
             }
@@ -178,11 +206,15 @@ async function main() {
                         if (!standingText)
                             throw `No value for ${standingTextKey}`;
 
-                        const textLayerName = eval(
-                            dbNameToAELayerNameMappingScheme[
-                                standingTextKey as keyof typeof dbNameToAELayerNameMappingScheme
-                            ]
-                        );
+                        // const textLayerName = eval(
+                        //     dbNameToAELayerNameMappingScheme[
+                        //         standingTextKey as keyof typeof dbNameToAELayerNameMappingScheme
+                        //     ]
+                        // );
+                        const textLayerName = mappingFuncs[
+                            standingTextKey as DB.Jobs.Mapping.StandingTextKey
+                        ](item, standing);
+
                         const text: AE.Json.TextImport = {
                             text: standingText,
                             textLayerName,
@@ -190,33 +222,6 @@ async function main() {
                         };
                         texts.push(text);
                     }
-
-                    // position
-                    texts.push({
-                        text: standing.position,
-                        textLayerName: eval(
-                            dbNameToAELayerNameMappingScheme.position
-                        ),
-                        recursiveInsertion: false,
-                    });
-
-                    // wins
-                    texts.push({
-                        text: standing.wins,
-                        textLayerName: eval(
-                            dbNameToAELayerNameMappingScheme.wins
-                        ),
-                        recursiveInsertion: false,
-                    });
-
-                    // losses
-                    texts.push({
-                        text: standing.losses,
-                        textLayerName: eval(
-                            dbNameToAELayerNameMappingScheme.losses
-                        ),
-                        recursiveInsertion: false,
-                    });
                 });
             }
         }

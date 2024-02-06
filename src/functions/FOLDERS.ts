@@ -29,10 +29,12 @@ export const FOLDERS = {
         }
 
         for (const folder of foldersArray) {
-            const absolutePath = path.resolve(
-                renderMachine[folder.root_folder],
-                folder.relative_path
-            );
+            const absolutePath = path
+                .resolve(
+                    renderMachine[folder.root_folder],
+                    folder.relative_path
+                )
+                .replace(/\\/g, '/');
             if (!fs.existsSync(absolutePath))
                 throw `Folder does not exist: ${absolutePath}`;
             folders[folder.name] = absolutePath;
