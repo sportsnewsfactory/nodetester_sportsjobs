@@ -126,6 +126,7 @@ async function main() {
             // absolute pathing is done on the local machine
             const absoluteNarrationFilePath = path.resolve(
                 absoluteFolderPaths.narration,
+                lang,
                 item.file_name
             );
             if (!fs.existsSync(absoluteNarrationFilePath))
