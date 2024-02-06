@@ -24,15 +24,13 @@ export const PATHS = {
         };
 
         for (const pathKey in paths) {
-            if (paths.hasOwnProperty(pathKey)) {
-                const pathExists = fs.existsSync(
+            const pathExists = fs.existsSync(
+                paths[pathKey as keyof AE.Json.AbsolutePath.Obj]
+            );
+            if (!pathExists)
+                throw `Path does not exist: ${
                     paths[pathKey as keyof AE.Json.AbsolutePath.Obj]
-                );
-                if (!pathExists)
-                    throw `Path does not exist: ${
-                        paths[pathKey as keyof AE.Json.AbsolutePath.Obj]
-                    }`;
-            }
+                }`;
         }
 
         return paths;

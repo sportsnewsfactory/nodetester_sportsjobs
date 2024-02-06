@@ -124,15 +124,18 @@ export namespace DB {
             sport_name?: SportName;
         };
 
-        export type GeneralNews = News & {
+        export type JoinedNews = News & {
             show_standings: string;
             show_next_matches: string;
             league_season_id: string | null;
             sport_id: string;
+            sport_name: SportName;
+            file_name: string;
         };
 
-        export type GeneralNewsWithTeams = GeneralNews & {
+        export type JoinedNewsTeamsSchedule = JoinedNews & {
             teams: TransTeam[];
+            next_matches: NextMatch[];
         };
 
         export type TransNewsWithTeams = TransNews & {
@@ -164,6 +167,20 @@ export namespace DB {
     // }
 
     export namespace Jobs {
+        export namespace Mapping {
+            export type StandingTextKey =
+                | 'team_name'
+                | 'position'
+                | 'wins'
+                | 'losses';
+            export type ItemTextKey = 'headline' | 'sub_headline';
+            export type ItemFileKey = 'narration' | 'background' | 'logo';
+
+            export type Scheme = {
+                [key in StandingTextKey | ItemTextKey | ItemFileKey]: string;
+            };
+        }
+
         export type FolderName =
             | 'narration'
             | 'backgrounds'

@@ -1,7 +1,7 @@
-import { HELPER } from "../classes/HELPER";
-import { MYSQL_DB } from "../classes/MYSQL_DB";
-import { DB_NAMES } from "../config/DB_NAMES";
-import { DB } from "../types/DB";
+import { HELPER } from '../classes/HELPER';
+import { MYSQL_DB } from '../classes/MYSQL_DB';
+import { DB_NAMES } from '../config/DB_NAMES';
+import { DB } from '../types/DB';
 
 /**
  * Since we have different types of news
@@ -17,13 +17,14 @@ export const STANDINGS = {
      * where the name in CORE__TRANS_TEAMS will be changed to name__${lang}
      */
     async getStandingsByLang(
-        DB: MYSQL_DB, 
-        sportName: DB.SportName, 
-        leagueSeasonId: string, 
-        lang: string): Promise<DB.StandingAug[]> {
+        DB: MYSQL_DB,
+        sportName: DB.SportName,
+        leagueSeasonId: string,
+        lang: string
+    ): Promise<DB.StandingAug[]> {
         // console.log(`getGeneralNewsItems`);
         const funcName = `NEWS.getGeneralNewsItems`;
-        
+
         try {
             const rs = `${sportName}.RAPID__STANDINGS`;
             const ct = `${sportName}.CORE__TEAMS`;
@@ -47,10 +48,10 @@ export const STANDINGS = {
 
             const itemsResult = await DB.pool.execute(sql);
             const items = itemsResult[0] as DB.StandingAug[];
+            items.sort((a, b) => Number(a.position) - Number(b.position));
             return items;
         } catch (e) {
             throw `${funcName} failed with: ${e}`;
         }
-        
     },
 };
