@@ -135,7 +135,7 @@ async function main() {
             // firstly let's generate the texts and files (relative, cause we're creating a job)
             // starting with the texts of the news item (headline, sub_headline)
 
-            for (const itemTextKey in itemTextKeys) {
+            for (const itemTextKey of itemTextKeys) {
                 const textLayerName =
                     mappingFuncs[itemTextKey as DB.Jobs.Mapping.ItemFileKey](
                         item
