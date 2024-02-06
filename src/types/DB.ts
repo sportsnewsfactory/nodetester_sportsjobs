@@ -177,7 +177,9 @@ export namespace DB {
             export type ItemFileKey = 'narration' | 'background' | 'logo';
 
             export type Scheme = {
-                [key in StandingTextKey | ItemTextKey | ItemFileKey]: string;
+                [key in StandingTextKey | ItemTextKey | ItemFileKey]: (
+                    ...params: any[]
+                ) => string;
             };
         }
 

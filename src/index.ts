@@ -51,7 +51,7 @@ async function main() {
             'logo',
         ];
 
-        const mappingFuncs = {
+        const mappingFuncs: DB.Jobs.Mapping.Scheme = {
             headline: (item: DB.Item.JoinedNews) => `Headline${item.id}`,
             sub_headline: (item: DB.Item.JoinedNews) =>
                 `headlinetext${item.id}1`,
