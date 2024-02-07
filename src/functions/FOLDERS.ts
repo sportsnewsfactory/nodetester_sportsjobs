@@ -34,11 +34,13 @@ export const FOLDERS = {
                     renderMachine[folder.root_folder],
                     folder.relative_path
                 )
-                .replace(/\\/g, '/');
+                .replace(/\\/g, '/') + '/';
             if (!fs.existsSync(absolutePath))
-                throw `Folder does not exist: ${absolutePath}`;
+                throw `Folder path does not exist: ${absolutePath}`;
             folders[folder.name] = absolutePath;
         }
+
+        // console.log(JSON.stringify(folders, null, 4));
 
         return folders;
     },

@@ -123,15 +123,6 @@ async function main() {
          */
 
         for (const item of items) {
-            // absolute pathing is done on the local machine
-            const absoluteNarrationFilePath = path.resolve(
-                absoluteFolderPaths.narration,
-                lang,
-                item.file_name
-            );
-            if (!fs.existsSync(absoluteNarrationFilePath))
-                throw `Narration file path does not exist: ${absoluteNarrationFilePath}`;
-
             // firstly let's generate the texts and files (relative, cause we're creating a job)
             // starting with the texts of the news item (headline, sub_headline)
 
@@ -141,11 +132,6 @@ async function main() {
                         item
                     );
 
-                // const textLayerName = eval(
-                //     dbNameToAELayerNameMappingScheme[
-                //         itemTextKey as keyof typeof dbNameToAELayerNameMappingScheme
-                //     ]
-                // );
                 const text: AE.Json.TextImport = {
                     text: item[itemTextKey as keyof DB.Item.News],
                     textLayerName,
@@ -154,16 +140,27 @@ async function main() {
                 texts.push(text);
             }
 
+            // console.log(JSON.stringify(texts));
+            // return;
+
             // now let's generate the files
             for (const itemFileKey of itemFileKeys) {
-                const absoluteFilePath = path
-                    .resolve(
-                        absoluteFolderPaths[
-                            itemFileKey as keyof typeof absoluteFolderPaths
-                        ],
-                        item[itemFileKey as keyof DB.Item.News]
-                    )
-                    .replace(/\\/g, '/');
+                const correctedItemKey = itemFileKey === 'narration' ? 'file_name' : itemFileKey;
+                const optionalLangAddition = itemFileKey === 'narration' ? `${lang}/` : '';
+                let folderKey: DB.Jobs.FolderName = itemFileKey as DB.Jobs.FolderName;
+                switch (itemFileKey) {
+                    case 'narration':
+                        folderKey = 'narration';
+                        break;
+                    case 'background':
+                        folderKey = 'backgrounds';
+                        break;
+                    case 'logo':
+                        folderKey = 'logos';
+                        break;
+                }
+                const absoluteFilePath = `${absoluteFolderPaths[folderKey as keyof typeof absoluteFolderPaths]}${optionalLangAddition}${item[correctedItemKey as keyof DB.Item.News]}`;
+                    
                 if (!fs.existsSync(absoluteFilePath))
                     throw `File path does not exist: ${absoluteFilePath}`;
                 files.push({
@@ -177,7 +174,7 @@ async function main() {
                         mappingFuncs[
                             itemFileKey as DB.Jobs.Mapping.ItemFileKey
                         ](item),
-                    resizeAction: 'fitToComp',
+                    resizeAction: null // 'fitToComp',
                 });
             }
 
@@ -200,12 +197,17 @@ async function main() {
                     );
 
                 const leagueSeasonName = standings[0].league_season_name; // will be inserted as text
-                standings.forEach((standing) => {
+                standings.forEach((standing, index) => {
+                    //console.log(JSON.stringify(standing));
+                    
+                    if (index >= 10) return; // we only need the top 10
+
                     for (const standingTextKey of standingTextKeys) {
-                        const standingText =
+                        //console.log(standingTextKey);
+                        
+                        let standingText =
                             standing[standingTextKey as keyof DB.StandingAug];
-                        if (!standingText)
-                            throw `No value for ${standingTextKey}`;
+                        if (!standingText) standingText = 'default' // throw `No value for ${standingTextKey}`;
 
                         // const textLayerName = eval(
                         //     dbNameToAELayerNameMappingScheme[
@@ -293,14 +295,14 @@ async function main() {
         };
 
         const jsoned = JSON.stringify(payload).replace(/\\\\/g, '/');
-        // console.warn(jsoned);
+        //console.warn(jsoned);
 
-        const axiosResponse = await axios.post(
-            `http://localhost:${PORT}${API_Endpoint}`,
-            { stringifiedJSON: jsoned }
-        );
-        console.log(JSON.stringify(axiosResponse.data));
-        //}
+        // const axiosResponse = await axios.post(
+        //     `http://localhost:${PORT}${API_Endpoint}`,
+        //     { stringifiedJSON: jsoned }
+        // );
+        // console.log(JSON.stringify(axiosResponse.data));
+        
     } catch (e) {
         console.warn(`Problem with main: ${e}`);
     } finally {
