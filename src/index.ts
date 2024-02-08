@@ -137,7 +137,7 @@ async function main() {
 
             const hasStandings = // false;
                 !!item.show_standings && !!item.league_season_id;
-            console.log(`hasStandings: ${hasStandings}`);
+            // onsole.log(`hasStandings: ${hasStandings}`);
 
             if (hasStandings) {
                 /**
