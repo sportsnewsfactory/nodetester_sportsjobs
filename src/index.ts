@@ -277,6 +277,10 @@ async function main() {
                 };
                 trimSyncData.push(trim);
 
+                /**
+                 * Now we sync the markers of Todays news ${i}
+                 * with the ends of the previous narration comps
+                 */
                 const relocateMarkers = () => {
                     const markerLayerName = `Todays news ${i}`;
                     let soundMarkerLayerNames: string[] = [];
