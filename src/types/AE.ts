@@ -13,7 +13,8 @@ export namespace AE {
         export type Sync =
             | 'syncSingleMarkers'
             | 'syncMarkerToOutPoint'
-            | 'syncHeadTail';
+            | 'syncHeadTail'
+            | 'syncToTime';
         export type Marker = 'markersSync';
         export type Resize =
             | 'fitToComp'
