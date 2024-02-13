@@ -71,4 +71,5 @@ export const NAMES = {
     admins: `${DB_NAMES.config}.admins`,
     editions: `${DB_NAMES.config}.editions`,
     folders: `${DB_NAMES.config}.folders`,
+    presenterSchemes: `${DB_NAMES.config}.presenterSchemes`,
 };

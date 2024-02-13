@@ -127,7 +127,8 @@ export namespace DB {
         export type JoinedNews = News & {
             show_standings: string;
             show_next_matches: string;
-            league_season_id: string | null;
+            standings_league_season_id: string | null;
+            schedule_league_season_id: string | null;
             sport_id: string;
             sport_name: SportName;
             file_name: string;
@@ -189,7 +190,8 @@ export namespace DB {
             | 'logos'
             | 'exports'
             | 'projects'
-            | 'projsaves';
+            | 'projsaves'
+            | 'presenters';
 
         export type Folder = {
             name: FolderName;
@@ -201,11 +203,18 @@ export namespace DB {
             brand_name: string;
             active: boolean;
             lang: string;
-            blueprint: string;
+            presenter_scheme: string;
             export_file_name: string;
             project_file_name: string;
             project_save_file_name: string;
         };
+
+        export type PresenterSchemeRecord = {
+            name: string;
+            day: string;
+            color: string;
+            gender: string;
+        }
 
         export type Blueprint = {
             name: string;

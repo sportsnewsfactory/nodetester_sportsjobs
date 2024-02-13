@@ -14,6 +14,43 @@ import axios from 'axios';
 import { EDITIONS } from './functions/EDITIONS';
 import { FOLDERS } from './functions/FOLDERS';
 import { PATHS } from './functions/PATHS';
+import { itemTextKeys, mappingFuncs, itemFileKeys, standingTextKeys } from './functions/MAPPING';
+import { PRESENTERSCHEMES } from './functions/PRESENTERSCHEMES';
+import { getPresenterSchemeFiles } from './functions/Presenters';
+
+async function testPresenterScheme(){
+    const DB = new MYSQL_DB();
+    DB.createPool();
+
+    try {
+        const editions = await EDITIONS.getAll(DB);
+        const renderMachine: RenderMachine = await identifyRenderMachine(DB);
+        const absoluteFolderPaths: {
+            [key in DB.Jobs.FolderName]: string;
+        } = await FOLDERS.getAll(DB, renderMachine);
+
+        const edition = editions[0];
+        const presenterScheme = await PRESENTERSCHEMES.getByName(DB, edition.presenter_scheme);
+        const now = new Date();
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[now.getDay()];
+        const todaysPresenterScheme = presenterScheme.find(scheme => scheme.day === dayName.toLowerCase());
+        if (!todaysPresenterScheme) throw `No presenter scheme found for day ${dayName}`;
+
+        const presenterFilePaths: string[] = 
+            getPresenterSchemeFiles(
+                absoluteFolderPaths.presenters, 
+                todaysPresenterScheme, 
+                edition.lang
+            );
+        console.log(JSON.stringify(presenterFilePaths));
+
+        } catch (e) {
+        console.warn(`Problem with main: ${e}`);
+    } finally {
+        await DB.pool.end();
+    }
+}
 
 async function main() {
     const DB = new MYSQL_DB();
@@ -33,38 +70,6 @@ async function main() {
         let files: AE.Json.FileImport[] = [];
         let trimSyncData: AE.Json.TS.Sequence = [];
 
-        const standingTextKeys: DB.Jobs.Mapping.StandingTextKey[] = [
-            'team_name',
-            'position',
-            'wins',
-            'losses',
-        ];
-        const itemTextKeys: DB.Jobs.Mapping.ItemTextKey[] = [
-            'headline',
-            'sub_headline',
-        ];
-        const itemFileKeys: DB.Jobs.Mapping.ItemFileKey[] = [
-            'narration',
-            'background',
-            'logo',
-        ];
-
-        const mappingFuncs: DB.Jobs.Mapping.Scheme = {
-            headline: (item: DB.Item.JoinedNews) => `Headline${item.id}`,
-            sub_headline: (item: DB.Item.JoinedNews) =>
-                `headlinetext${item.id}1`,
-            team_name: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
-                `ranking-name-team${item.id}-${standing.position}`,
-            position: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
-                `ranking-stat1-team${item.id}-${standing.position}`,
-            wins: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
-                `ranking-stat2-team${item.id}-${standing.position}`,
-            losses: (item: DB.Item.JoinedNews, standing: DB.StandingAug) =>
-                `ranking-stat3-team${item.id}-${standing.position}`,
-            narration: (item: DB.Item.JoinedNews) => `News-Narration${item.id}`,
-            background: (item: DB.Item.JoinedNews) => `News-BG${item.id}`,
-            logo: (item: DB.Item.JoinedNews) => `News-logo${item.id}`,
-        };
 
         const edition = editions[0];
         //for (const edition of editions) {
@@ -118,8 +123,10 @@ async function main() {
                             folderKey = 'logos';
                             break;
                     }
-                    const absoluteFilePath = `${absoluteFolderPaths[folderKey as keyof typeof absoluteFolderPaths]}${optionalLangAddition}${item[correctedItemKey as keyof DB.Item.News]}`;
-                        
+                    let absoluteFilePath = `${absoluteFolderPaths[folderKey as keyof typeof absoluteFolderPaths]}${optionalLangAddition}`;
+                    absoluteFilePath += (itemFileKey === 'background' || itemFileKey === 'logo') ? `S_B_${item.sport_name}/` : ``;
+                    absoluteFilePath += item[correctedItemKey as keyof DB.Item.News];
+
                     if (!fs.existsSync(absoluteFilePath))
                         throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
                     files.push({
@@ -136,8 +143,8 @@ async function main() {
             populateItemFiles();
 
             const hasStandings = // false;
-                !!item.show_standings && !!item.league_season_id;
-            // onsole.log(`hasStandings: ${hasStandings}`);
+                !!item.show_standings && !!item.standings_league_season_id;
+            // console.log(`hasStandings: ${hasStandings}`);
 
             if (hasStandings) {
                 /**
@@ -152,13 +159,13 @@ async function main() {
                         await STANDINGS.getStandingsByLang(
                             DB,
                             item.sport_name!,
-                            item.league_season_id!,
+                            item.standings_league_season_id!,
                             lang
                         );
 
                     standings = standings.slice(0, 10); // we only need the top 10
 
-                    const leagueSeasonName = standings[0].league_season_name; // will be inserted as text
+                    // const leagueSeasonName = standings[0].league_season_name; // will be inserted as text
                     
                     standings.forEach((standing, index) => {
                         //console.log(JSON.stringify(standing));
@@ -193,6 +200,10 @@ async function main() {
 
                 await populateStandingsTexts();
             }
+
+            const hasSchedule = // false;
+                !!item.show_next_matches && !!item.schedule_league_season_id;
+            console.log(`hasSchedule: ${hasSchedule}`);
         }
 
         const trimNarration = () => {
@@ -317,7 +328,7 @@ async function main() {
             });
         }
 
-        //syncNewsComps();
+        syncNewsComps();
 
         let payload: AE.Json.Payload = {
             files,
@@ -378,4 +389,6 @@ async function main() {
     // console.log(`payload`, payload);
 }
 
-main();
+// main();
+
+testPresenterScheme();
