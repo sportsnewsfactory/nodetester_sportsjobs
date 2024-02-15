@@ -39,10 +39,10 @@ export function getPresenterSchemeFiles(
     presenterFolderPath: string, 
     scheme: DB.Jobs.PresenterSchemeRecord,
     lang: string
-): string[] {
+): {[key: string]: string} {
     try {
         let presenterFiles: string[] = getPresenterFilesFromFolder(presenterFolderPath);
-        let outputPaths: string[] = [];
+        let outputPaths: {[key: string]: string} = {};
         
         // firstly, let's filter the files by lang
         // lang is always uppercase, as is the lang in the file name
@@ -79,7 +79,7 @@ export function getPresenterSchemeFiles(
         // so we start with the opener
         let opener = presenterFilesByDay.find(file => file.toLowerCase().includes(`_opener`));
         if (!opener) throw `No opener found for scheme ${JSON.stringify(scheme)}`;
-        outputPaths.push(`${presenterFolderPath}${opener}`);
+        outputPaths.opener = `${presenterFolderPath}${opener}`;
 
         // now let's get the closer
         // for now we default to the first closer we find
@@ -89,11 +89,12 @@ export function getPresenterSchemeFiles(
             if (!closer) throw `No closer found for scheme ${JSON.stringify(scheme)}`;
         }
 
-        for (const path of outputPaths){
+        outputPaths.closer = `${presenterFolderPath}${closer}`;
+
+        for (const pathKey in outputPaths){
+            const path = outputPaths[pathKey];
             if (!fs.existsSync(path)) throw `File not found: ${path}`;
         }
-
-        outputPaths.push(`${presenterFolderPath}${closer}`);
 
         return outputPaths;
     } catch (e) {

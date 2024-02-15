@@ -31,4 +31,5 @@ export const mappingFuncs: DB.Jobs.Mapping.Scheme = {
     narration: (item: DB.Item.JoinedNews) => `News-Narration${item.id}`,
     background: (item: DB.Item.JoinedNews) => `News-BG${item.id}`,
     logo: (item: DB.Item.JoinedNews) => `News-logo${item.id}`,
+    presenter: (key: string) => (key.toLowerCase().includes('open') ? 'Presenteropen' : 'Presenterclose')
 };

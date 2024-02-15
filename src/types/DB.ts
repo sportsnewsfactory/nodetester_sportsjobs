@@ -169,6 +169,7 @@ export namespace DB {
 
     export namespace Jobs {
         export namespace Mapping {
+            export type EditionKey = 'presenter';
             export type StandingTextKey =
                 | 'team_name'
                 | 'position'
@@ -178,7 +179,7 @@ export namespace DB {
             export type ItemFileKey = 'narration' | 'background' | 'logo';
 
             export type Scheme = {
-                [key in StandingTextKey | ItemTextKey | ItemFileKey]: (
+                [key in StandingTextKey | ItemTextKey | ItemFileKey | EditionKey ]: (
                     ...params: any[]
                 ) => string;
             };

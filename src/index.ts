@@ -18,6 +18,7 @@ import { itemTextKeys, mappingFuncs, itemFileKeys, standingTextKeys } from './fu
 import { PRESENTERSCHEMES } from './functions/PRESENTERSCHEMES';
 import { getPresenterSchemeFiles } from './functions/Presenters';
 
+/*
 async function testPresenterScheme(){
     const DB = new MYSQL_DB();
     DB.createPool();
@@ -51,6 +52,7 @@ async function testPresenterScheme(){
         await DB.pool.end();
     }
 }
+*/
 
 async function main() {
     const DB = new MYSQL_DB();
@@ -63,13 +65,13 @@ async function main() {
             [key in DB.Jobs.FolderName]: string;
         } = await FOLDERS.getAll(DB, renderMachine);
 
+        const now = new Date();
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
         let trimSyncData: AE.Json.TS.Sequence = [];
-
 
         const edition = editions[0];
         //for (const edition of editions) {
@@ -81,130 +83,203 @@ async function main() {
 
         const lang = edition.lang;
 
-        const items: DB.Item.JoinedNews[] =
-            await GENERALNEWS.getTransItemsByLang(DB, lang);
+        // const getPresnterScheme = async () => {
+        //     const presenterScheme = await PRESENTERSCHEMES.getByName(DB, edition.presenter_scheme);
+        //     const now = new Date();
+        //     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        //     const dayName = dayNames[now.getDay()];
+        //     const todaysPresenterScheme = presenterScheme.find(scheme => scheme.day === dayName.toLowerCase());
+        //     if (!todaysPresenterScheme) throw `No presenter scheme found for day ${dayName}`;
 
-        // const item = items[0];
-
-        for (const item of items) {
-            // firstly let's generate the texts and files (relative, cause we're creating a job)
-            // starting with the texts of the news item (headline, sub_headline)
-
-            const populateItemTexts = () => {
-                for (const itemTextKey of itemTextKeys) {
-                    const textLayerName =
-                        mappingFuncs[itemTextKey as DB.Jobs.Mapping.ItemFileKey](
-                            item
-                        );
-
-                    const text: AE.Json.TextImport = {
-                        text: item[itemTextKey as keyof DB.Item.News],
-                        textLayerName,
-                        recursiveInsertion: false,
-                    };
-                    texts.push(text);
-                }
-            }
-
-            populateItemTexts();
-            // console.log(JSON.stringify(texts));
-            // return;
-
-            const populateItemFiles = () => {
-                for (const itemFileKey of itemFileKeys) {
-                    const correctedItemKey = itemFileKey === 'narration' ? 'file_name' : itemFileKey;
-                    const optionalLangAddition = itemFileKey === 'narration' ? `${lang}/` : '';
-                    let folderKey: DB.Jobs.FolderName = itemFileKey as DB.Jobs.FolderName;
-                    switch (itemFileKey) {
-                        case 'background':
-                            folderKey = 'backgrounds';
-                            break;
-                        case 'logo':
-                            folderKey = 'logos';
-                            break;
-                    }
-                    let absoluteFilePath = `${absoluteFolderPaths[folderKey as keyof typeof absoluteFolderPaths]}${optionalLangAddition}`;
-                    absoluteFilePath += (itemFileKey === 'background' || itemFileKey === 'logo') ? `S_B_${item.sport_name}/` : ``;
-                    absoluteFilePath += item[correctedItemKey as keyof DB.Item.News];
-
-                    if (!fs.existsSync(absoluteFilePath))
-                        throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
-                    files.push({
-                        absolutePath: absoluteFilePath,
-                        compositionName:
-                            mappingFuncs[
-                                itemFileKey as DB.Jobs.Mapping.ItemFileKey
-                            ](item),
-                        resizeAction: null // 'fitToComp', // currently fitToComp is throwing an error
-                    });
-                }
-            }
+        //     const presenterFilePaths: {[key: string]: string} = 
+        //         getPresenterSchemeFiles(
+        //             absoluteFolderPaths.presenters, 
+        //             todaysPresenterScheme, 
+        //             edition.lang
+        //         );
             
-            populateItemFiles();
+        //     return presenterFilePaths;
+        // }
 
-            const hasStandings = // false;
-                !!item.show_standings && !!item.standings_league_season_id;
-            // console.log(`hasStandings: ${hasStandings}`);
+        /**
+         * Here we get the files and immediately shove them into the files array
+         */
+        const setPresenterFiles = async () => {
+            const presenterScheme = await PRESENTERSCHEMES.getByName(DB, edition.presenter_scheme);
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = dayNames[now.getDay()];
+            const todaysPresenterScheme = presenterScheme.find(scheme => scheme.day === dayName.toLowerCase());
+            if (!todaysPresenterScheme) throw `No presenter scheme found for day ${dayName}`;
 
-            if (hasStandings) {
-                /**
-                 * If we have standings we throw loads of texts into the texts array
-                 * 
-                 * Here unfortunately we get the league_season_name
-                 * in every row and need to place it once in the converted
-                 * object
-                 */
-                const populateStandingsTexts = async () => {
-                    let standings: DB.StandingAug[] =
-                        await STANDINGS.getStandingsByLang(
-                            DB,
-                            item.sport_name!,
-                            item.standings_league_season_id!,
-                            lang
-                        );
+            const presenterFilePaths: {[key: string]: string} = 
+                getPresenterSchemeFiles(
+                    absoluteFolderPaths.presenters, 
+                    todaysPresenterScheme, 
+                    edition.lang
+                );
+            
+            for (const pathKey in presenterFilePaths){
+                const absoluteFilePath = presenterFilePaths[pathKey];
+                if (!fs.existsSync(absoluteFilePath))
+                    throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
+                files.push({
+                    absolutePath: absoluteFilePath,
+                    compositionName: mappingFuncs.presenter(pathKey),
+                    resizeAction: 'fitToComp',
+                });
+            }
+        }
 
-                    standings = standings.slice(0, 10); // we only need the top 10
+        // const presenterFiles = await getPresnterScheme();
+        await setPresenterFiles();
 
-                    // const leagueSeasonName = standings[0].league_season_name; // will be inserted as text
-                    
-                    standings.forEach((standing, index) => {
-                        //console.log(JSON.stringify(standing));
-                        
-                        if (index >= 10) return; // we only need the top 10
+        /**
+         * Now for every item we get the texts and files
+         */
+        const runThroughItems = async () => {
+                const items: DB.Item.JoinedNews[] =
+                await GENERALNEWS.getTransItemsByLang(DB, lang);
 
-                        for (const standingTextKey of standingTextKeys) {
-                            //console.log(standingTextKey);
-                            
-                            let standingText =
-                                standing[standingTextKey as keyof DB.StandingAug];
-                            if (!standingText) standingText = 'default' // throw `No value for ${standingTextKey}`;
+            // const item = items[0];
 
-                            // const textLayerName = eval(
-                            //     dbNameToAELayerNameMappingScheme[
-                            //         standingTextKey as keyof typeof dbNameToAELayerNameMappingScheme
-                            //     ]
-                            // );
-                            const textLayerName = mappingFuncs[
-                                standingTextKey as DB.Jobs.Mapping.StandingTextKey
-                            ](item, standing);
+            for (const item of items) {
+                // firstly let's generate the texts and files (relative, cause we're creating a job)
+                // starting with the texts of the news item (headline, sub_headline)
 
-                            const text: AE.Json.TextImport = {
-                                text: standingText, // might be a number
-                                textLayerName,
-                                recursiveInsertion: false,
-                            };
-                            texts.push(text);
-                        }
-                    });
+                const populateItemTexts = () => {
+                    for (const itemTextKey of itemTextKeys) {
+                        const textLayerName =
+                            mappingFuncs[itemTextKey as DB.Jobs.Mapping.ItemFileKey](
+                                item
+                            );
+
+                        const text: AE.Json.TextImport = {
+                            text: item[itemTextKey as keyof DB.Item.News],
+                            textLayerName,
+                            recursiveInsertion: false,
+                        };
+                        texts.push(text);
+                    }
                 }
 
-                await populateStandingsTexts();
-            }
+                populateItemTexts();
+                // console.log(JSON.stringify(texts));
+                // return;
 
-            const hasSchedule = // false;
-                !!item.show_next_matches && !!item.schedule_league_season_id;
-            console.log(`hasSchedule: ${hasSchedule}`);
+                const populateItemFiles = () => {
+                    for (const itemFileKey of itemFileKeys) {
+                        const correctedItemKey = itemFileKey === 'narration' ? 'file_name' : itemFileKey;
+                        const optionalLangAddition = itemFileKey === 'narration' ? `${lang}/` : '';
+                        let folderKey: DB.Jobs.FolderName = itemFileKey as DB.Jobs.FolderName;
+                        switch (itemFileKey) {
+                            case 'background':
+                                folderKey = 'backgrounds';
+                                break;
+                            case 'logo':
+                                folderKey = 'logos';
+                                break;
+                        }
+                        let absoluteFilePath = `${absoluteFolderPaths[folderKey as keyof typeof absoluteFolderPaths]}${optionalLangAddition}`;
+                        absoluteFilePath += (itemFileKey === 'background' || itemFileKey === 'logo') ? `S_B_${item.sport_name}/` : ``;
+                        absoluteFilePath += item[correctedItemKey as keyof DB.Item.News];
+
+                        if (!fs.existsSync(absoluteFilePath))
+                            throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
+                        files.push({
+                            absolutePath: absoluteFilePath,
+                            compositionName:
+                                mappingFuncs[
+                                    itemFileKey as DB.Jobs.Mapping.ItemFileKey
+                                ](item),
+                            resizeAction: null // 'fitToComp', // currently fitToComp is throwing an error
+                        });
+                    }
+                }
+                
+                populateItemFiles();
+
+                const hasStandings = // false;
+                    !!item.show_standings && !!item.standings_league_season_id;
+                // console.log(`hasStandings: ${hasStandings}`);
+
+                if (hasStandings) {
+                    /**
+                     * If we have standings we throw loads of texts into the texts array
+                     * 
+                     * Here unfortunately we get the league_season_name
+                     * in every row and need to place it once in the converted
+                     * object
+                     */
+                    const populateStandingsTexts = async () => {
+                        let standings: DB.StandingAug[] =
+                            await STANDINGS.getStandingsByLang(
+                                DB,
+                                item.sport_name!,
+                                item.standings_league_season_id!,
+                                lang
+                            );
+
+                        standings = standings.slice(0, 10); // we only need the top 10
+
+                        // const leagueSeasonName = standings[0].league_season_name; // will be inserted as text
+                        
+                        standings.forEach((standing, index) => {
+                            //console.log(JSON.stringify(standing));
+                            
+                            if (index >= 10) return; // we only need the top 10
+
+                            for (const standingTextKey of standingTextKeys) {
+                                //console.log(standingTextKey);
+                                
+                                let standingText =
+                                    standing[standingTextKey as keyof DB.StandingAug];
+                                if (!standingText) standingText = 'default' // throw `No value for ${standingTextKey}`;
+
+                                // const textLayerName = eval(
+                                //     dbNameToAELayerNameMappingScheme[
+                                //         standingTextKey as keyof typeof dbNameToAELayerNameMappingScheme
+                                //     ]
+                                // );
+                                const textLayerName = mappingFuncs[
+                                    standingTextKey as DB.Jobs.Mapping.StandingTextKey
+                                ](item, standing);
+
+                                const text: AE.Json.TextImport = {
+                                    text: standingText, // might be a number
+                                    textLayerName,
+                                    recursiveInsertion: false,
+                                };
+                                texts.push(text);
+                            }
+                        });
+                    }
+
+                    await populateStandingsTexts();
+                }
+
+                const hasSchedule = // false;
+                    !!item.show_next_matches && !!item.schedule_league_season_id;
+                console.log(`hasSchedule: ${hasSchedule}`);
+            }
         }
+
+        await runThroughItems();
+
+        /**
+         * The trimming can be done immediately after the presenter files have been inserted
+         */
+        const trimPresenterFiles = () => {
+            const compNames = ['Presenter Open','Presenter Close'];
+            for (const compName of compNames) {
+                const sync: AE.Json.TS.Trim = {
+                    method: 'trimByAudio',
+                    layerOrCompName: compName,
+                };
+                trimSyncData.push(sync);
+            }
+        }
+
+        trimPresenterFiles();
 
         const trimNarration = () => {
             // firstly we trim the narration comps
@@ -318,17 +393,120 @@ async function main() {
 
         trimSyncNews();
 
-        const syncNewsComps = () => {
-            // now after we've trimmed the news comps let's sync the news comps
+        /**
+         * We're done with inserting files and texts
+         * and we're done with trimming narration and presenters
+         * and syncing the news items internally
+         * now it's time to sync the main comp layers
+         * 
+         * we'll start with Presenter Open to Intro
+         * then News comp 1 to Presenter Open
+         * then News comp 2 to News comp 1
+         * then Presenter Close to News comp 2
+         * 
+         * Once all that's done we sync the soundtrack
+         * and the markers
+         */
+        const syncMainCompLayers = () => {
+            // Presenter Open to Intro
             trimSyncData.push({
                 method: 'syncHeadTail',
-                padding: 0.1,
+                padding: 0,
+                layerAName: 'Presenter Open',
+                layerBName: 'Intro',
+            });
+
+            // News comp 1 to Presenter Open
+            trimSyncData.push({
+                method: 'syncHeadTail',
+                padding: 0,
+                layerAName: 'News comp 1',
+                layerBName: 'Presenter Open',
+            });
+
+            // News comp 2 to News comp 1
+            trimSyncData.push({
+                method: 'syncHeadTail',
+                padding: 0,
                 layerAName: 'News comp 2',
                 layerBName: 'News comp 1',
             });
+            
+            // Presenter Close to News comp 2
+            trimSyncData.push({
+                method: 'syncHeadTail',
+                padding: 0,
+                layerAName: 'Presenter Close',
+                layerBName: 'News comp 2',
+            });
+
+            // Ending to Presenter Close via single marker
+            trimSyncData.push({
+                method: 'syncMarkerToOutPoint',
+                padding: 0,
+                layerAName: 'Ending',
+                layerBName: 'Presenter Close',
+            });
+
+            const syncTransitions = () => {
+                const transitionLayerNames = [
+                    'trans-presOpen-news1',
+                    'trans-news1-news2',
+                    'trans-news2-presClose',
+                ];
+
+                const syncToLayers = [
+                    'Presenter Open',
+                    'News comp 1',
+                    'News comp 2',
+                ]
+
+                for (let i=0; i<transitionLayerNames.length; i++){
+                    const transLayerName = transitionLayerNames[i];
+                    const syncToLayer = syncToLayers[i];
+                    const syncMarker: AE.Json.TS.Sync = {
+                        method: 'syncMarkerToOutPoint',
+                        padding: 0,
+                        layerAName: transLayerName,
+                        layerBName: syncToLayer,
+                    }
+                    trimSyncData.push(syncMarker);
+                }
+            }
+
+            syncTransitions();
+
+            const syncSoundtrack = () => {
+                const syncMarker: AE.Json.TS.Sync = {
+                    method: 'syncMarkerToOutPoint',
+                    padding: 0,
+                    layerAName: 'Sound ending',
+                    layerBName: 'Presenter Close',
+                }
+                trimSyncData.push(syncMarker);
+
+                // now we trim the loop to the beginning of
+                // the sound ending
+                const trim: AE.Json.TS.Trim = {
+                    method: 'trimOutToIn',
+                    layerOrCompName: 'Intro news III Loop',
+                    trimToLayer: 'Sound ending',
+                };
+                trimSyncData.push(trim);
+            }
+
+            syncSoundtrack();
         }
 
-        syncNewsComps();
+        syncMainCompLayers();
+
+        // set workarea
+        const trim: AE.Json.TS.Trim = {
+            method: 'trimWorkareaToLayerOut',
+            layerOrCompName: '0_Main comp',
+            trimToLayer: 'Ending',
+        };
+        trimSyncData.push(trim);
 
         let payload: AE.Json.Payload = {
             files,
@@ -389,6 +567,6 @@ async function main() {
     // console.log(`payload`, payload);
 }
 
-// main();
+main();
 
-testPresenterScheme();
+// testPresenterScheme();
