@@ -2,6 +2,9 @@
  * Here we'll convert data from the DB to a Json.Payload object
  */
 
+import fs from 'fs';
+import axios from 'axios';
+
 import { MYSQL_DB } from './classes/MYSQL_DB';
 import { GENERALNEWS } from './functions/GENERALNEWS';
 import { STANDINGS } from './functions/STANDINGS';
@@ -9,8 +12,6 @@ import identifyRenderMachine from './functions/identifyRenderMachine';
 import { AE } from './types/AE';
 import { DB } from './types/DB';
 import { RenderMachine } from './types/RenderMachine';
-import fs from 'fs';
-import axios from 'axios';
 import { EDITIONS } from './functions/EDITIONS';
 import { FOLDERS } from './functions/FOLDERS';
 import { PATHS } from './functions/PATHS';
@@ -75,6 +76,7 @@ async function main() {
 
         const edition = editions[0];
         //for (const edition of editions) {
+        
         // export file, project file and project save file
         const absoluteFilePaths: AE.Json.AbsolutePath.Obj = PATHS.getAll(
             absoluteFolderPaths,
@@ -135,6 +137,8 @@ async function main() {
 
         /**
          * Now for every item we get the texts and files
+         * if there are standings we get the standings texts
+         * currently the schedule texts are not implemented
          */
         const runThroughItems = async () => {
                 const items: DB.Item.JoinedNews[] =
@@ -212,11 +216,12 @@ async function main() {
                      */
                     const populateStandingsTexts = async () => {
                         let standings: DB.StandingAug[] =
-                            await STANDINGS.getStandingsByLang(
+                            // await STANDINGS.getStandingsByLang(
+                            await STANDINGS.getStandingsEN(
                                 DB,
                                 item.sport_name!,
                                 item.standings_league_season_id!,
-                                lang
+                                // lang
                             );
 
                         standings = standings.slice(0, 10); // we only need the top 10
@@ -541,7 +546,7 @@ async function main() {
             `http://localhost:${PORT}${API_Endpoint}`,
             { stringifiedJSON: jsoned }
         );
-        // console.log(JSON.stringify(axiosResponse.data));
+        console.log(JSON.stringify(axiosResponse.data));
         
     } catch (e) {
         console.warn(`Problem with main: ${e}`);

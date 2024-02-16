@@ -47,29 +47,4 @@ export const GENERALNEWS = {
             throw `${funcName} failed with: ${e}`;
         }
     },
-    // async getUITransItems(DB: MYSQL_DB): Promise<UI.Trans.Item.Base[]> {
-    //     const funcName = `NEWS.getUITransItems`;
-    //     try {
-    //         const sql = `
-    //         SELECT GeneralNews.RAPID__NEWS.*, config.sports.name AS sport_name
-    //         FROM GeneralNews.RAPID__NEWS
-    //         JOIN config.sports
-    //         ON GeneralNews.RAPID__NEWS.sport_id = config.sports.id;
-    //     `;
-    //         const items = await DB.pool.execute(sql);
-    //         return items[0] as UI.Trans.Item.Base[];
-    //     } catch (e) {
-    //         throw `${funcName} failed with: ${e}`;
-    //     }
-    // },
-    // async getGeneralTransNewsItems(DB: MYSQL_DB): Promise<DB.Item.TransNews[]> {
-    //     const funcName = `NEWS.getGeneralTransNewsItems`;
-    //     const items: DB.Item.TransNews[] =
-    //         await HELPER.select<DB.Item.TransNews>({
-    //             DB,
-    //             funcName,
-    //             tableName: `GeneralNews.RAPID__TRANS_NEWS`,
-    //         });
-    //     return items;
-    // },
 };
