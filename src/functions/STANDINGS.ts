@@ -31,8 +31,27 @@ export const STANDINGS = {
             const tt = `${sportName}.CORE__TRANS_TEAMS`;
             const ls = `${sportName}.CORE__LEAGUESEASONS`;
 
+            /*
+                const sql = `
+                    SELECT rs.position, rs.wins, rs.losses, rs.league_season_id, tt.name as team_name, ls.name as league_season_name
+                    FROM ${rs} as rs
+                    INNER JOIN ${ct} as ct
+                    ON rs.team_id = ct.id
+                    INNER JOIN ${tt} as tt
+                    ON rs.team_id = tt.id
+                    INNER JOIN ${ls} as ls
+                    ON rs.league_season_id = ls.id
+                    WHERE tt.lang = '${lang}'
+                    AND rs.league_season_id = '${leagueSeasonId}';
+                `;
+            */
+
+            /**
+             * Going to use the short code for the team name
+             */
+
             const sql = `
-                SELECT rs.position, rs.wins, rs.losses, rs.league_season_id, tt.name as team_name, ls.name as league_season_name
+                SELECT rs.position, rs.wins, rs.losses, rs.league_season_id, ct.name_code as team_name, ls.name as league_season_name
                 FROM ${rs} as rs
                 INNER JOIN ${ct} as ct
                 ON rs.team_id = ct.id
@@ -68,7 +87,7 @@ export const STANDINGS = {
             const ls = `${sportName}.CORE__LEAGUESEASONS`;
 
             const sql = `
-                SELECT rs.position, rs.wins, rs.losses, rs.league_season_id, ct.name as team_name, ls.name as league_season_name
+                SELECT rs.position, rs.wins, rs.losses, rs.league_season_id, ct.name_code as team_name, ls.name as league_season_name
                 FROM ${rs} as rs
                 INNER JOIN ${ct} as ct
                 ON rs.team_id = ct.id

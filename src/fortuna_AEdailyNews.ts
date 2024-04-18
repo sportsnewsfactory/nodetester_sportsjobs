@@ -28,7 +28,13 @@ import { getFormattedDate } from './functions/helper/getFormattedDate';
 
 const tempMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-async function Fortuna_SNS_AE_News__CORE() {    
+/**
+ * Testing Fortuna AE daily edition with the new core tables
+ * 
+ * Here we're minimizing the usage of anonymous classes
+ * containing functions and instead using the generic SELECT
+ */
+async function Fortuna_AE_daily_news__CORE() {    
     const DB = new MYSQL_DB();
     DB.createPool();
 
@@ -46,7 +52,7 @@ async function Fortuna_SNS_AE_News__CORE() {
          * from the database.
          */
         const brand_name: string = 'Fortuna';
-        const product_name: CORE.Keys.Product = 'SNS_AE_News';
+        const product_name: CORE.Keys.Product = 'AE_Daily_News';
         const lang: CORE.Keys.Lang = 'RO';
         const renderMachine: RenderMachine = await identifyRenderMachine(DB);
         
@@ -229,6 +235,35 @@ async function Fortuna_SNS_AE_News__CORE() {
             // const exportName = `${brand_name}-${item[`headline__${$.lang}`]}-${templateName}-${formattedDate}.png`;
             // const saveName = `${brand_name}-${item.id}-${item[`headline__${$.lang}`]}-${templateName}-${formattedDate}.psd`;
 
+            const setPresenterFiles = async () => {
+                const presenterScheme = await PRESENTERSCHEMES.getByName(DB, edition.presenter_scheme);
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const dayName = dayNames[now.getDay()];
+                const todaysPresenterScheme = presenterScheme.find(scheme => scheme.day === dayName.toLowerCase());
+                if (!todaysPresenterScheme) throw `No presenter scheme found for day ${dayName}`;
+
+                const presenterFilePaths: {[key: string]: string} = 
+                    getPresenterSchemeFiles(
+                        subFolders.presenters, // absoluteFolderPaths.presenters, 
+                        todaysPresenterScheme, 
+                        edition.lang
+                    );
+                
+                for (const pathKey in presenterFilePaths){
+                    const absoluteFilePath = presenterFilePaths[pathKey];
+                    if (!fs.existsSync(absoluteFilePath))
+                        throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
+                    files.push({
+                        absolutePath: absoluteFilePath,
+                        compositionName: mappingFuncs.presenter(pathKey),
+                        resizeAction: 'fitToComp',
+                    });
+                }
+            }
+
+            // const presenterFiles = await getPresnterScheme();
+            await setPresenterFiles();
+
         /**
          * Now for every item we get the texts and files
          * if there are standings we get the standings texts
@@ -320,199 +355,197 @@ async function Fortuna_SNS_AE_News__CORE() {
                 
                 populateItemFiles();
 
-                // const hasStandings = // false;
-                //     !!item.show_standings && !!item.standings_league_season_id;
-                // // console.log(`hasStandings: ${hasStandings}`);
+                const hasStandings = // false;
+                    !!item.show_standings && !!item.standings_league_season_id;
+                // console.log(`hasStandings: ${hasStandings}`);
 
-                // if (hasStandings) {
-                //     /**
-                //      * If we have standings we throw loads of texts into the texts array
-                //      * 
-                //      * Here unfortunately we get the league_season_name
-                //      * in every row and need to place it once in the converted
-                //      * object
-                //      */
-                //     const populateStandingsTexts = async () => {
-                //         let standings: DB.StandingAug[] =
-                //             // await STANDINGS.getStandingsByLang(
-                //             await STANDINGS.getStandingsEN(
-                //                 DB,
-                //                 item.sport_name!,
-                //                 item.standings_league_season_id!,
-                //                 // lang
-                //             );
+                if (hasStandings) {
+                    /**
+                     * If we have standings we throw loads of texts into the texts array
+                     * 
+                     * Here unfortunately we get the league_season_name
+                     * in every row and need to place it once in the converted
+                     * object
+                     */
+                    const populateStandingsTexts = async () => {
+                        let standings: DB.StandingAug[] =
+                            // await STANDINGS.getStandingsByLang(
+                            await STANDINGS.getStandingsEN(
+                                DB,
+                                item.sport_name!,
+                                item.standings_league_season_id!,
+                                // lang
+                            );
 
-                //         standings = standings.slice(0, 10); // we only need the top 10
+                        standings = standings.slice(0, 10); // we only need the top 10
 
-                //         // console.log(`%cStandings length: ${standings.length}`, `color: pink`);
-                //         // console.log(`%csample: ${JSON.stringify(standings, null, 4)}`, `color: pink`);
+                        // console.log(`%cStandings length: ${standings.length}`, `color: pink`);
+                        // console.log(`%csample: ${JSON.stringify(standings, null, 4)}`, `color: pink`);
 
-                //         // Insert ranking header over the standings table
-                //         // console.log(`LeagueSeason_name: ${standings[0].league_season_name}`)
+                        // Insert ranking header over the standings table
+                        // console.log(`LeagueSeason_name: ${standings[0].league_season_name}`)
                         
-                //         const leagueSeasonName = standings[0].league_season_name || ''; // will be inserted as text
-                //         const standingsHeaderLayerName = `Ranking-header-${i+1}`;
-                //         texts.push({
-                //             text: leagueSeasonName,
-                //             textLayerName: standingsHeaderLayerName,
-                //             recursiveInsertion: false,
-                //         });
+                        const leagueSeasonName = standings[0].league_season_name || ''; // will be inserted as text
+                        const standingsHeaderLayerName = `Ranking-header-${i+1}`;
+                        texts.push({
+                            text: leagueSeasonName,
+                            textLayerName: standingsHeaderLayerName,
+                            recursiveInsertion: false,
+                        });
 
-                //         // Standings title -- N, W, L
-                //         // structure ranking-stat${col#}-header${item#}
-                //         for (let j=0; j<standingTextKeys.length; j++) {
-                //             const standingTextKey = standingTextKeys[j];
-                //             if (standingTextKey === 'team_name') continue; // we don't need the team name (it's already in the item text
-                //             const textLayerName = `ranking-stat${j}-header${i+1}`;
-                //             const text: AE.Json.TextImport = {
-                //                 text: standingTextKey.charAt(0).toUpperCase(),
-                //                 textLayerName,
-                //                 recursiveInsertion: false,
-                //             };
-                //             texts.push(text);
-                //         }
+                        // Standings title -- N, W, L
+                        // structure ranking-stat${col#}-header${item#}
+                        for (let j=0; j<standingTextKeys.length; j++) {
+                            const standingTextKey = standingTextKeys[j];
+                            if (standingTextKey === 'team_name') continue; // we don't need the team name (it's already in the item text
+                            const textLayerName = `ranking-stat${j}-header${i+1}`;
+                            const text: AE.Json.TextImport = {
+                                text: standingTextKey.charAt(0).toUpperCase(),
+                                textLayerName,
+                                recursiveInsertion: false,
+                            };
+                            texts.push(text);
+                        }
 
-                //         standings.forEach((standing, index) => {
-                //             //console.log(JSON.stringify(standing));
+                        standings.forEach((standing, index) => {
+                            //console.log(JSON.stringify(standing));
                             
-                //             if (index >= 10) return; // we only need the top 10
+                            if (index >= 10) return; // we only need the top 10
 
-                //             for (const standingTextKey of standingTextKeys) {
-                //                 //console.log(standingTextKey);
+                            for (const standingTextKey of standingTextKeys) {
+                                //console.log(standingTextKey);
                                 
-                //                 let standingText =
-                //                     standing[standingTextKey as keyof DB.StandingAug];
-                //                 if (!standingText) standingText = ' ' // throw `No value for ${standingTextKey}`;
+                                let standingText =
+                                    standing[standingTextKey as keyof DB.StandingAug];
+                                if (!standingText) standingText = ' ' // throw `No value for ${standingTextKey}`;
 
-                //                 const textLayerName = mappingFuncs[
-                //                     standingTextKey as DB.Jobs.Mapping.StandingTextKey
-                //                 ](item, standing);
+                                const textLayerName = mappingFuncs[
+                                    standingTextKey as DB.Jobs.Mapping.StandingTextKey
+                                ](item, standing);
 
-                //                 const text: AE.Json.TextImport = {
-                //                     text: standingText, // might be a number
-                //                     textLayerName,
-                //                     recursiveInsertion: false,
-                //                 };
+                                const text: AE.Json.TextImport = {
+                                    text: standingText, // might be a number
+                                    textLayerName,
+                                    recursiveInsertion: false,
+                                };
 
-                //                 // console.log(`%cText: ${JSON.stringify(text, null, 4)}`, 'color: pink');
+                                // console.log(`%cText: ${JSON.stringify(text, null, 4)}`, 'color: pink');
 
-                //                 texts.push(text);
-                //             }
-                //         });
-                //     }
+                                texts.push(text);
+                            }
+                        });
+                    }
 
-                //     await populateStandingsTexts();
-                // }
+                    await populateStandingsTexts();
+                }
 
-                // //console.warn(`hasSchedule: ${item.show_next_matches} && ${item.schedule_league_season_id}`)
-                // const hasSchedule = !!item.show_next_matches && !!item.schedule_league_season_id;
-                // //console.log(`%chasSchedule: ${hasSchedule}`, 'color: Orange');
+                //console.warn(`hasSchedule: ${item.show_next_matches} && ${item.schedule_league_season_id}`)
+                const hasSchedule = !!item.show_next_matches && !!item.schedule_league_season_id;
+                //console.log(`%chasSchedule: ${hasSchedule}`, 'color: Orange');
 
-                // if (hasSchedule) {
-                //     const populateScheduleTexts = async () => {
-                //         let schedule: DB.NextMatch_WithTeamNames[] = await NEXTMATCHES.getBySportNameAndLeagueSeasonId(
-                //             DB,
-                //             item.sport_name!,
-                //             item.schedule_league_season_id!
-                //         );
+                if (hasSchedule) {
+                    const populateScheduleTexts = async () => {
+                        let schedule: DB.NextMatch_WithTeamNames[] = await NEXTMATCHES.getBySportNameAndLeagueSeasonId(
+                            DB,
+                            item.sport_name!,
+                            item.schedule_league_season_id!
+                        );
 
-                //         console.log(`%cSchedule length: ${schedule.length}`, `color: orange`);
+                        console.log(`%cSchedule length: ${schedule.length}`, `color: orange`);
 
-                //         if (schedule.length > 10) schedule = schedule.slice(0, 10); // we only need the top 10
-                //         // if (schedule.length < 10){ 
-                //         //     console.warn(`There are less than 10 matches in the schedule for sport ${item.sport_name} item ${item.id} league_season_id ${item.schedule_league_season_id}`);
-                //         //     return;
-                //         // }
+                        if (schedule.length > 10) schedule = schedule.slice(0, 10); // we only need the top 10
+                        // if (schedule.length < 10){ 
+                        //     console.warn(`There are less than 10 matches in the schedule for sport ${item.sport_name} item ${item.id} league_season_id ${item.schedule_league_season_id}`);
+                        //     return;
+                        // }
 
-                //         for (let j=0; j<schedule.length; j++) {
-                //             const match = schedule[j];
-                //             const formatDateAndTime = () => {
-                //                 // convert the mysql timestamp to a js date
-                //                 const jsDate = new Date(match.start_time_timestamp);
-                //                 let hours = jsDate.getHours();
-                //                 const minutes = jsDate.getMinutes();
-                //                 const formattedHours = hours > 12 ? hours -= 12 : hours;
-                //                 const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-                //                 const AMPM = hours > 12 ? 'PM' : 'AM';
+                        for (let j=0; j<schedule.length; j++) {
+                            const match = schedule[j];
+                            const formatDateAndTime = () => {
+                                // convert the mysql timestamp to a js date
+                                const jsDate = new Date(match.start_time_timestamp);
+                                let hours = jsDate.getHours();
+                                const minutes = jsDate.getMinutes();
+                                const formattedHours = hours > 12 ? hours -= 12 : hours;
+                                const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+                                const AMPM = hours > 12 ? 'PM' : 'AM';
 
-                //                 // console.log(`%cstart_time_timestamp: ${match.start_time_timestamp}`, 'color: Orange');
+                                // console.log(`%cstart_time_timestamp: ${match.start_time_timestamp}`, 'color: Orange');
                                 
-                //                 // const splittedTimeStamp = String(match.start_time_timestamp).split('T');
-                //                 // const splittedTimeStamp = jsDate.split(' ');
-                //                 // const splittedDate = splittedTimeStamp[0].split('-');
-                //                 // const splittedTime = splittedTimeStamp[1].split(':');
-                //                 // temporarily we'll use the dd/mm/yyyy format for the date
-                //                 // and hh:mm for the time
-                //                 const formattedDate = `${jsDate.getDate()} ${tempMonths[jsDate.getMonth() + 1]}`;
-                //                 const formattedTime = `${formattedHours}:${formattedMinutes} ${AMPM}`;
-                //                 return [formattedDate, formattedTime];
-                //             }
+                                // const splittedTimeStamp = String(match.start_time_timestamp).split('T');
+                                // const splittedTimeStamp = jsDate.split(' ');
+                                // const splittedDate = splittedTimeStamp[0].split('-');
+                                // const splittedTime = splittedTimeStamp[1].split(':');
+                                // temporarily we'll use the dd/mm/yyyy format for the date
+                                // and hh:mm for the time
+                                const formattedDate = `${jsDate.getDate()} ${tempMonths[jsDate.getMonth() + 1]}`;
+                                const formattedTime = `${formattedHours}:${formattedMinutes} ${AMPM}`;
+                                return [formattedDate, formattedTime];
+                            }
 
-                //             const [formattedDate, formattedTime] = formatDateAndTime();
+                            const [formattedDate, formattedTime] = formatDateAndTime();
                             
-                //             const dateLayerName = mappingFuncs.scheduleMatchDate(i+1, j+1);
-                //             const timeLayerName = mappingFuncs.scheduleMatchTime(i+1, j+1);
-                //             const homeTeamLayerName = mappingFuncs.scheduleHomeTeam(i+1, j+1);
-                //             const awayTeamLayerName = mappingFuncs.scheduleAwayTeam(i+1, j+1);
+                            const dateLayerName = mappingFuncs.scheduleMatchDate(i+1, j+1);
+                            const timeLayerName = mappingFuncs.scheduleMatchTime(i+1, j+1);
+                            const homeTeamLayerName = mappingFuncs.scheduleHomeTeam(i+1, j+1);
+                            const awayTeamLayerName = mappingFuncs.scheduleAwayTeam(i+1, j+1);
 
-                //             texts.push({
-                //                 text: formattedDate,
-                //                 textLayerName: dateLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-                //             texts.push({
-                //                 text: formattedTime,
-                //                 textLayerName: timeLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-                //             texts.push({
-                //                 text: match.home_team_name,
-                //                 textLayerName: homeTeamLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-                //             texts.push({
-                //                 text: match.away_team_name,
-                //                 textLayerName: awayTeamLayerName,
-                //                 recursiveInsertion: false,
-                //             });
+                            texts.push({
+                                text: formattedDate,
+                                textLayerName: dateLayerName,
+                                recursiveInsertion: false,
+                            });
+                            texts.push({
+                                text: formattedTime,
+                                textLayerName: timeLayerName,
+                                recursiveInsertion: false,
+                            });
+                            texts.push({
+                                text: match.home_team_name,
+                                textLayerName: homeTeamLayerName,
+                                recursiveInsertion: false,
+                            });
+                            texts.push({
+                                text: match.away_team_name,
+                                textLayerName: awayTeamLayerName,
+                                recursiveInsertion: false,
+                            });
 
-                //             console.log(`%ctime: ${formattedDate} ${formattedTime}\nhome: ${match.home_team_name} away: ${match.away_team_name}`, 'color: Cyan');
-                //         }
+                            console.log(`%ctime: ${formattedDate} ${formattedTime}\nhome: ${match.home_team_name} away: ${match.away_team_name}`, 'color: Cyan');
+                        }
                         
-                //     }
+                    }
 
-                //     await populateScheduleTexts();
+                    await populateScheduleTexts();
 
-                //     /**
-                //      * Every team is supposed to have a logo
-                //      * Currently there's no mechanism for this
-                //      */
-                //     const populateScheduleFiles = async () => {
+                    /**
+                     * Every team is supposed to have a logo
+                     * Currently there's no mechanism for this
+                     */
+                    const populateScheduleFiles = async () => {
                         
-                //     }
-                // }
+                    }
+                }
             } // end items for loop
         }
 
         await runThroughItems();
 
-
-
         /**
          * The trimming can be done immediately after the presenter files have been inserted
          */
-        // const trimPresenterFiles = () => {
-        //     const compNames = ['Presenter Open','Presenter Close'];
-        //     for (const compName of compNames) {
-        //         const sync: AE.Json.TS.Trim = {
-        //             method: 'trimByAudio',
-        //             layerOrCompName: compName,
-        //         };
-        //         trimSyncData.push(sync);
-        //     }
-        // }
+        const trimPresenterFiles = () => {
+            const compNames = ['Presenter Open','Presenter Close'];
+            for (const compName of compNames) {
+                const sync: AE.Json.TS.Trim = {
+                    method: 'trimByAudio',
+                    layerOrCompName: compName,
+                };
+                trimSyncData.push(sync);
+            }
+        }
 
-        // trimPresenterFiles();
+        trimPresenterFiles();
 
         const trimNarration = () => {
             // firstly we trim the narration comps
@@ -589,7 +622,7 @@ async function Fortuna_SNS_AE_News__CORE() {
                 }
                 syncBackgrounds();
 
-                const newsCompName = `Todays news ${ii}`;
+                const newsCompName = `News comp ${ii}`;
                 const trim: AE.Json.TS.Trim = {
                     method: 'trimByAudio',
                     layerOrCompName: newsCompName,
@@ -645,58 +678,56 @@ async function Fortuna_SNS_AE_News__CORE() {
          */
         const syncMainCompLayers = () => {
             // Presenter Open to Intro
-            // trimSyncData.push({
-            //     method: 'syncHeadTail',
-            //     padding: 0,
-            //     layerAName: 'Presenter Open',
-            //     layerBName: 'Intro',
-            // });
+            trimSyncData.push({
+                method: 'syncHeadTail',
+                padding: 0,
+                layerAName: 'Presenter Open',
+                layerBName: 'Intro',
+            });
 
             // News comp 1 to Presenter Open
             trimSyncData.push({
                 method: 'syncHeadTail',
                 padding: 0,
-                layerAName: 'Todays news 1',
-                layerBName: 'Intro',
+                layerAName: 'News comp 1',
+                layerBName: 'Presenter Open',
             });
 
             // News comp 2 to News comp 1
             trimSyncData.push({
                 method: 'syncHeadTail',
                 padding: 0,
-                layerAName: 'Todays news 2',
-                layerBName: 'Todays news 1',
+                layerAName: 'News comp 2',
+                layerBName: 'News comp 1',
             });
             
-            // // Presenter Close to News comp 2
-            // trimSyncData.push({
-            //     method: 'syncHeadTail',
-            //     padding: 0,
-            //     layerAName: 'Presenter Close',
-            //     layerBName: 'News comp 2',
-            // });
+            // Presenter Close to News comp 2
+            trimSyncData.push({
+                method: 'syncHeadTail',
+                padding: 0,
+                layerAName: 'Presenter Close',
+                layerBName: 'News comp 2',
+            });
 
-            // Ending to News comp 2 instead of Presenter Close via single marker
+            // Ending to Presenter Close via single marker
             trimSyncData.push({
                 method: 'syncMarkerToOutPoint',
                 padding: 0,
                 layerAName: 'Ending',
-                layerBName: 'Todays news 2',
+                layerBName: 'Presenter Close',
             });
 
             const syncTransitions = () => {
                 const transitionLayerNames = [
-                    // 'trans-presOpen-news1',
-                    // 'trans-news1-news2',
-                    // 'trans-news2-presClose',
-                    'trans1',
-                    'trans2',
+                    'trans-presOpen-news1',
+                    'trans-news1-news2',
+                    'trans-news2-presClose',
                 ];
 
                 const syncToLayers = [
-                    // 'Presenter Open',
-                    'Todays news 1',
-                    'Todays news 2',
+                    'Presenter Open',
+                    'News comp 1',
+                    'News comp 2',
                 ]
 
                 for (let i=0; i<transitionLayerNames.length; i++){
@@ -719,8 +750,7 @@ async function Fortuna_SNS_AE_News__CORE() {
                     method: 'syncMarkerToOutPoint',
                     padding: 0,
                     layerAName: 'Sound ending',
-                    // layerBName: 'Presenter Close',
-                    layerBName: 'Todays news 2',
+                    layerBName: 'Presenter Close',
                 }
                 trimSyncData.push(syncMarker);
 
@@ -728,8 +758,7 @@ async function Fortuna_SNS_AE_News__CORE() {
                 // the sound ending
                 const trim: AE.Json.TS.Trim = {
                     method: 'trimOutToIn',
-                    // layerOrCompName: 'Intro news III Loop',
-                    layerOrCompName: 'Intro Sound',
+                    layerOrCompName: 'Intro news III Loop',
                     trimToLayer: 'Sound ending',
                 };
                 trimSyncData.push(trim);
@@ -789,4 +818,4 @@ async function Fortuna_SNS_AE_News__CORE() {
     }
 }
 
-Fortuna_SNS_AE_News__CORE();
+Fortuna_AE_daily_news__CORE();

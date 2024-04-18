@@ -72,4 +72,7 @@ export const NAMES = {
     editions: `${DB_NAMES.config}.editions`,
     folders: `${DB_NAMES.config}.folders`,
     presenterSchemes: `${DB_NAMES.config}.presenterSchemes`,
+
+    general_folders: `${DB_NAMES.config}.CORE_L2_general_folders`,
+    core_editions: `${DB_NAMES.config}.CORE_L3_editions`,
 };

@@ -29,7 +29,7 @@ export const GENERALNEWS = {
 
         try {
             const sql = `
-                SELECT rn.id, tr.file_name, tr.headline, tr.sub_headline, tr.narration, rn.sport_id, sports.name as sport_name, rn.background, rn.logo, rn.show_standings, rn.standings_league_season_id, rn.schedule_league_season_id, tr.lang
+                SELECT rn.id, tr.file_name, tr.headline, tr.sub_headline, tr.narration, rn.sport_id, sports.name as sport_name, rn.background, rn.logo, rn.show_standings, rn.show_next_matches, rn.standings_league_season_id, rn.schedule_league_season_id, tr.lang
                 FROM GeneralNews.RAPID__NEWS as rn
                 INNER JOIN GeneralNews.RAPID__TRANS_NEWS as tr
                 ON rn.id = tr.item_id

@@ -45,6 +45,11 @@ export namespace DB {
         sport_name?: SportName;
     };
 
+    export type NextMatch_WithTeamNames = NextMatch & {
+        home_team_name: string;
+        away_team_name: string;
+    };
+
     export type LeagueSeason = {
         id: string;
         name: string;
@@ -90,7 +95,6 @@ export namespace DB {
             draws: string;
         };
     }
-
     export namespace Basketball {
         export type Standings = Omit<StandingsBase, 'matches' | 'points'> & {
             streak: string;
@@ -155,18 +159,6 @@ export namespace DB {
         export type Logo = Background;
     }
 
-    // export interface Job {
-    //     id?: number; // The '?' denotes that this field is optional (as it's auto-incremented in SQL)
-    //     layer_comp_name: string;
-    //     markers: string;
-    //     layer_comp_type: string;
-    //     media_type: string; // 'file', 'text', or 'none'
-    //     is_trim: boolean;
-    //     is_sync: boolean;
-    //     is_marker: boolean;
-    //     parent_comp: string;
-    // }
-
     export namespace Jobs {
         export namespace Mapping {
             export type EditionKey = 'presenter';
@@ -177,9 +169,10 @@ export namespace DB {
                 | 'losses';
             export type ItemTextKey = 'headline' | 'sub_headline';
             export type ItemFileKey = 'narration' | 'background' | 'logo';
+            export type ScheduleKey = 'scheduleMatchDate' | 'scheduleMatchTime' | 'scheduleHomeTeam' | 'scheduleAwayTeam';
 
             export type Scheme = {
-                [key in StandingTextKey | ItemTextKey | ItemFileKey | EditionKey ]: (
+                [key in StandingTextKey | ItemTextKey | ItemFileKey | EditionKey | ScheduleKey ]: (
                     ...params: any[]
                 ) => string;
             };

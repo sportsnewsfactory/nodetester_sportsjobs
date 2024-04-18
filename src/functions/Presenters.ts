@@ -65,7 +65,7 @@ export function getPresenterSchemeFiles(
         // so that we can default to generic files if no files are found
         // for the closer
         let presenterFilesByDay = presenterFiles.filter(file => file.toLowerCase().includes(`_${scheme.day}`));
-        if (presenterFilesByDay.length === 0) throw `presenterFilesByDay: No presenter files found for day ${scheme.day}`;
+        if (presenterFilesByDay.length === 0) throw `presenterFilesByDay: No presenter files found for day ${scheme.day} in folder ${presenterFolderPath}`;
 
         // now let's filter by gender
         // gender is always lowercase, whereas the
