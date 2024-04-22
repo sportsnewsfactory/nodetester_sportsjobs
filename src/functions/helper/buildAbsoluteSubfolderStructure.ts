@@ -10,6 +10,8 @@ export function buildAbsoluteSubfolderStructure__AE(
     $: { [key in CORE.Keys.ExpectedPathVariables]: string }
 ): { [key in CORE.Keys.AE.ProductSubFolder]: string } {
 
+    // console.log(`%c${JSON.stringify(subfolderStructure, null, 2)}`, 'color: yellow');
+
     /**
      * Let's just make sure that all templated paths
      * have a forward slash at the end
@@ -17,18 +19,19 @@ export function buildAbsoluteSubfolderStructure__AE(
     for (const subFolder of subfolderStructure) {
         if (!subFolder.subfolder_path.endsWith('/')) 
             throw `Subfolder path must end with a forward slash: ${subFolder.subfolder_path}\n@ ${subFolder.product_name} ${subFolder.folder_type}`;
-    }
-
-    console.log(`%c${JSON.stringify($, null, 2)}`, 'color: yellow');
+    }    
 
     let subFolders: { [key in CORE.Keys.AE.ProductSubFolder]: string } = {} as { [key in CORE.Keys.AE.ProductSubFolder]: string };
     // const PSSubfolderArray: CORE.Keys.PS.ProductSubFolder[] = ['saves', 'exports', 'templates', 'staticBackgrounds', 'logos'];
-    const AESubfolderArray: CORE.Keys.AE.ProductSubFolder[] = ['saves', 'exports', 'templates', 'dynamic_backgrounds', 'narration','presenters'];
+    // const AESubfolderArray: CORE.Keys.AE.ProductSubFolder[] = ['saves', 'exports', 'templates', 'dynamic_backgrounds', 'narration','presenters'];
     // const allPossibleSubfolders = [...PSSubfolderArray, ...AESubfolderArray];
-    
+
     for (const subfolder of subfolderStructure) {
-        if (!AESubfolderArray.includes(subfolder.folder_type)) throw `Subfolder key not found: ${subfolder.folder_type}`;
-        const expectedVariables: string[] = subfolder.expected_variables.split(', ');
+        // if (!AESubfolderArray.includes(subfolder.folder_type)) throw `Subfolder key not found: ${subfolder.folder_type}`;
+        console.log(`%c${JSON.stringify(subfolder)}`, 'color: pink');
+        const expectedVariables: string[] = [];
+        if (!subfolder.expected_variables.includes(',')) expectedVariables.push(subfolder.expected_variables);
+        else expectedVariables.push(...subfolder.expected_variables.split(', '));
         subFolders[subfolder.folder_type] = subfolder.subfolder_path;
         for (const variable of expectedVariables) {
             const cleanVar = variable.replace('$', '') as CORE.Keys.ExpectedPathVariables;

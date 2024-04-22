@@ -28,7 +28,7 @@ import { getFormattedDate } from './functions/helper/getFormattedDate';
 
 const tempMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-async function Fortuna_SNS_AE_News__CORE() {    
+async function Fortuna_SNS_AE_Schedule__CORE() {    
     const DB = new MYSQL_DB();
     DB.createPool();
 
@@ -46,7 +46,7 @@ async function Fortuna_SNS_AE_News__CORE() {
          * from the database.
          */
         const brand_name: string = 'Fortuna';
-        const product_name: CORE.Keys.Product = 'SNS_AE_News';
+        const product_name: CORE.Keys.Product = 'SNS_AE_Schedule';
         const lang: CORE.Keys.Lang = 'RO';
         const renderMachine: RenderMachine = await identifyRenderMachine(DB);
         

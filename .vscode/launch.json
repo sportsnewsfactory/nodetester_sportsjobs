@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "Launch Program",
             "skipFiles": ["<node_internals>/**"],
-            "program": "${workspaceFolder}\\build\\index.js",
+            "program": "${workspaceFolder}\\build\\fortuna_AESNSRanking.js",
             "outFiles": ["${workspaceFolder}/**/*.js"],
             "resolveSourceMapLocations": [
                 "${workspaceFolder}/**",

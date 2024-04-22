@@ -7,7 +7,7 @@ export const NEXTMATCHES = {
         sportName: DB.SportName,
         leagueSeasonId: string,
         // lang: string
-    ): Promise<DB.NextMatch_WithTeamNames[]> {
+    ): Promise<DB.NextMatch_NewFormat[]> {
         // console.log(`getGeneralNewsItems`);
         const funcName = `NEWS.getGeneralNewsItems`;
 
@@ -16,18 +16,9 @@ export const NEXTMATCHES = {
             const ct = `${sportName}.CORE__TEAMS`;
             const ls = `${sportName}.CORE__LEAGUESEASONS`;
 
-            // const sql = `
-            //     SELECT rn.home_team_id, rn.away_team_id, rn.start_time_seconds, rn.start_time_timestamp, rn.league_season_id, ct.name_code as team_name, ls.name as league_season_name
-            //     FROM ${rn} as rn
-            //     INNER JOIN ${ct} as ct
-            //     ON rn.home_team_id = ct.id OR rn.away_team_id = ct.id
-            //     INNER JOIN ${ls} as ls
-            //     ON rn.league_season_id = ls.id
-            //     WHERE rn.league_season_id = '${leagueSeasonId}';
-            // `;
             const sql = `
                 SELECT rn.home_team_id, rn.away_team_id, rn.start_time_seconds, rn.start_time_timestamp, rn.league_season_id, 
-                    ct_home.name_code as home_team_name, ct_away.name_code as away_team_name, ls.name as league_season_name
+                    ct_home.name_code as home_team, ct_away.name_code as away_team, ls.name as league_season_name
                 FROM ${rn} as rn
                 INNER JOIN ${ct} as ct_home
                 ON rn.home_team_id = ct_home.id
@@ -36,12 +27,10 @@ export const NEXTMATCHES = {
                 INNER JOIN ${ls} as ls
                 ON rn.league_season_id = ls.id
                 WHERE rn.league_season_id = '${leagueSeasonId}';
-            `
-
-            // console.log(`sql: ${sql}`);
+            `;
 
             const itemsResult = await DB.pool.execute(sql);
-            const items = itemsResult[0] as DB.NextMatch_WithTeamNames[];
+            const items = itemsResult[0] as DB.NextMatch_NewFormat[];
             items.sort((a, b) => Number(a.start_time_seconds) - Number(b.start_time_seconds));
             return items;
         } catch (e) {

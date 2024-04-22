@@ -50,6 +50,13 @@ export namespace DB {
         away_team_name: string;
     };
 
+    export type NextMatch_NewFormat = NextMatch & {
+        home_team: string;
+        away_team: string;
+        date: string;
+        time: string;
+    };
+
     export type LeagueSeason = {
         id: string;
         name: string;
@@ -81,7 +88,18 @@ export namespace DB {
     export type StandingAug = StandingsBase & {
         league_season_name: string;
         team_name: string;
+        position: string;
+        wins: string;
+        losses: string;
+        league_season_id: string;
     };
+
+    // export type StandingWinsLosses = StandingAug & {
+    //     position: number;
+    //     wins: number;
+    //     losses: number;
+    //     league_season_id: string
+    // }
 
     export namespace Football {
         export type Standings = StandingsBase & {
@@ -169,13 +187,15 @@ export namespace DB {
                 | 'losses';
             export type ItemTextKey = 'headline' | 'sub_headline';
             export type ItemFileKey = 'narration' | 'background' | 'logo';
-            export type ScheduleKey = 'scheduleMatchDate' | 'scheduleMatchTime' | 'scheduleHomeTeam' | 'scheduleAwayTeam';
+            export type ScheduleKey = 'date' | 'time' | 'home_team' | 'away_team';
 
             export type Scheme = {
                 [key in StandingTextKey | ItemTextKey | ItemFileKey | EditionKey | ScheduleKey ]: (
                     ...params: any[]
                 ) => string;
             };
+
+            export type ContentType = 'schedule' | 'standings' | 'item';
         }
 
         export type FolderName =

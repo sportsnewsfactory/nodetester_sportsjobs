@@ -74,6 +74,8 @@ export namespace CORE {
         export type Product = 
             | 'AE_Daily_News'
             | 'SNS_AE_News'
+            | 'SNS_AE_Schedule'
+            | 'SNS_AE_Ranking'
             | 'SNS_PS_Schedule'
             | 'SNS_PS_News'
             | 'SNS_PS_Ranking'
