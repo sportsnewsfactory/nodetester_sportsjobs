@@ -25,7 +25,6 @@ import { getBrandEditionProduct } from './functions/helper/getBrandEditionProduc
 import { buildAbsoluteSubfolderStructure__AE } from './functions/helper/buildAbsoluteSubfolderStructure';
 import path from 'path';
 import { getFormattedDate } from './functions/helper/getFormattedDate';
-import { testCalendarSNSAE } from './functions/standalone/Economic News/Calendar SNS/test';
 
 const tempMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -790,4 +789,4 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
     }
 }
 
-testCalendarSNSAE();
+Fortuna_SNS_AE_News__CORE();

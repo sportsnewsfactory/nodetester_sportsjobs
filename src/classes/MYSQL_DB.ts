@@ -14,9 +14,9 @@ dotenv.config();
 
 export class MYSQL_DB {
     private static config: PoolOptions = {
-        user: process.env.DB_USER,
-        password: process.env.DB_PWD,
-        host: process.env.DB_HOST,
+        user: process.env.ECN_DB_USER,
+        password: process.env.ECN_DB_PWD,
+        host: process.env.ECN_DB_HOST,
         port: parseInt(process.env.DB_PORT || '', 10),
         connectionLimit: parseInt(process.env.CONNECTION_LIMIT || ''),
         multipleStatements: true,

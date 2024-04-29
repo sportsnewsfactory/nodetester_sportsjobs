@@ -8,7 +8,7 @@ export const RENDERFARM = {
         const renderMachines = await HELPER.select<RenderMachine>({
             DB,
             funcName,
-            tableName: `config.renderFarm`,
+            tableName: `economicnews.ECN_CORE_renderFarm` //`config.renderFarm`,
         });
         return renderMachines;
     },
