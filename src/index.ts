@@ -11,7 +11,6 @@ import { STANDINGS } from './functions/STANDINGS';
 import identifyRenderMachine from './functions/identifyRenderMachine';
 import { AE } from './types/AE';
 import { DB } from './types/DB';
-import { RenderMachine } from './types/RenderMachine';
 import { EDITIONS } from './functions/EDITIONS';
 import { FOLDERS } from './functions/FOLDERS';
 import { PATHS } from './functions/PATHS';
@@ -26,6 +25,7 @@ import { buildAbsoluteSubfolderStructure__AE } from './functions/helper/buildAbs
 import path from 'path';
 import { getFormattedDate } from './functions/helper/getFormattedDate';
 import { testCalendarSNSAE } from './functions/standalone/Economic News/Calendar SNS/test';
+import { Fortuna_SNS_AE_Ranking__CORE } from './fortuna_AESNSRanking';
 
 const tempMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -49,7 +49,7 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
         const brand_name: string = 'Fortuna';
         const product_name: CORE.Keys.Product = 'SNS_AE_Schedule';
         const lang: CORE.Keys.Lang = 'RO';
-        const renderMachine: RenderMachine = await identifyRenderMachine(DB);
+        const renderMachine: DB.RenderMachine = await identifyRenderMachine(DB);
         
         const now = new Date();
         const PORT = 9411;
@@ -74,7 +74,7 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
             if (!folderType) throw `Folder type not found: ${generalFolderKey}`;
             generalFolderPaths[generalFolderKey as 'dynamic_backgrounds' | 'narration' | 'logos'] = 
                 path.resolve(
-                    renderMachine[folderType.root_folder as keyof RenderMachine] as string, 
+                    renderMachine[folderType.root_folder as keyof DB.RenderMachine] as string, 
                     folderType.folder_path as string
                 ).replace(/\\/g, '/');
         }
@@ -790,4 +790,5 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
     }
 }
 
-testCalendarSNSAE();
+// testCalendarSNSAE();
+Fortuna_SNS_AE_Ranking__CORE();

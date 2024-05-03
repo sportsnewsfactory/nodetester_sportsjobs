@@ -7,6 +7,8 @@ import { EditionMetaV2 } from "./types/EditionMeta";
 import { Lang } from "./types/Lang";
 import { LangScheme } from "./types/LangScheme";
 import { AE } from "../../../../types/AE";
+import { DB } from "../../../../types/DB";
+import { getWeekdayTimeDate } from "./functions/getWeekdayTimeDate";
 
 /**
  * Here we'll grab the English data
@@ -69,22 +71,52 @@ export async function testCalendarSNSAE(){
 
         let texts: AE.Json.TextImport[] = [];
 
-        for (let item of allCalendarItemsEN) {
-            console.log(JSON.stringify(item));
-        }
+        const relevantItems = allCalendarItemsEN
+            .filter(item => Number(item.id) >= 1 && Number(item.id) <= 6);
+
+        const item = relevantItems[0];
+        // for (let item of allCalendarItemsEN) {
+            let id = Number(item.id);
+            if (id < 1 || id > 6) throw new Error(`Invalid id: ${id}`);
+
+            const { date, time, weekday } = getWeekdayTimeDate(item.dateUtc);
+
+            const whatWeGonnaPushWhere: {[key in Calendar.Item.DataSourceKeys]: string} = {
+                title: item.title,
+                definition: item.defenition,
+                date,
+                weekday,
+                time,
+                previous: item.previous,
+                forecast: item.estimates,
+            }
+
+            for (let n in whatWeGonnaPushWhere) {
+                const key = n as Calendar.Item.DataSourceKeys;
+                if (whatWeGonnaPushWhere[key] === null) throw new Error(`Null value for key: ${key}`);
+                
+                const text: AE.Json.TextImport = {
+                    text: whatWeGonnaPushWhere[key],
+                    textLayerName: `txt-item${id}-economic_calendar-${key}`,
+                    recursiveInsertion: false,
+                }
+
+                texts.push(text);
+            }
+        // }
 
         let payload: AE.Json.Payload = {
             files: [],
-            texts: [],
+            texts,
             trimSyncData: [],
             names: {
                 exportComp: '0_Main comp',
                 importBin: 'Imports',
             },
             paths: {
-                exportFile: 'C:/Users/alexa/Desktop/Exports/CalendarData.json',
-                projectFile: 'C:/Users/alexa/Desktop/Exports/CalendarData.aep',
-                projectSaveFile: 'C:/Users/alexa/Desktop/Exports/CalendarData.aep',
+                exportFile: '//NAS4Bay/Qnap3/Studio/VICTOR Projects/Instagram News/Inactive/Indicator Template/INDICATOR/export.mp4',
+                projectFile: '//NAS4Bay/Qnap3/Studio/VICTOR Projects/Instagram News/Inactive/Indicator Template/INDICATOR/test.aep',
+                projectSaveFile: `//NAS4Bay/Qnap3/Studio/VICTOR Projects/Instagram News/Inactive/Indicator Template/INDICATOR/savetest.aep`,
             },
             dbg: {
                 dbgLevel: -7,
@@ -106,11 +138,11 @@ export async function testCalendarSNSAE(){
 
         // return;
 
-        // const axiosResponse = await axios.post(
-        //     `http://localhost:${PORT}${API_Endpoint}`,
-        //     { stringifiedJSON: jsoned }
-        // );
-        // console.log(JSON.stringify(axiosResponse.data));
+        const axiosResponse = await axios.post(
+            `http://localhost:${PORT}${API_Endpoint}`,
+            { stringifiedJSON: jsoned }
+        );
+        console.log(JSON.stringify(axiosResponse.data));
     } catch (e) {
         console.error(e);
     } finally {

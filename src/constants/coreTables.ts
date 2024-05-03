@@ -7,5 +7,5 @@ export const coreTables: {[key: string]: string} = {
     scopes: 'config.CORE_L1_scopes',
     root_folders: 'config.CORE_L1_root_folders',
     langs: 'config.CORE_L1_langs',
-    
+    renderFarm: 'config.renderFarm',
 }

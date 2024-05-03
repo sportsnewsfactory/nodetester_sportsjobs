@@ -4,6 +4,7 @@ export namespace Calendar {
         | 'title'
         | 'definition'
         | 'date'
+        | 'weekday'
         | 'time'
         | 'previous'
         | 'forecast'
@@ -31,6 +32,7 @@ export namespace Calendar {
         | `txt-item${ItemNum}-economic_calendar-title`
         | `txt-item${ItemNum}-economic_calendar-definition`
         | `txt-item${ItemNum}-economic_calendar-date`
+        | `txt-item${ItemNum}-economic_calendar-weekday`
         | `txt-item${ItemNum}-economic_calendar-time`
         | `txt-item${ItemNum}-economic_calendar-previous`
         | `txt-item${ItemNum}-economic_calendar-forecast`

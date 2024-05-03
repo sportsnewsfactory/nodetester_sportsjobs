@@ -2,6 +2,18 @@ import { AE } from './AE';
 import { RenderMachine, RenderMachinePathKey } from './RenderMachine';
 
 export namespace DB {
+    export type RenderMachine = {
+        name: string;
+        os: string;
+        root_user_name: string;
+        drive_path: string;
+        local_storage_path: string;
+        extensions_path: string;
+        qnap_path: string;
+        machine_type: string;
+        average_edition_rendering_time_in_seconds: number;
+    };
+    
     export type TeamBase = {
         id: string;
         name: string;
