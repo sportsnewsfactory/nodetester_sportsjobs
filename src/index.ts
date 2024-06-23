@@ -26,6 +26,11 @@ import path from 'path';
 import { getFormattedDate } from './functions/helper/getFormattedDate';
 import { testCalendarSNSAE } from './functions/standalone/Economic News/Calendar SNS/test';
 import { Fortuna_SNS_AE_Ranking__CORE } from './fortuna_AESNSRanking';
+import { getExpectedVariables__AE } from './getExpectedVariables__AE';
+import { getBackgrounds__AE } from './getBackgrounds__AE';
+import { goNoGo } from './getGoNoGo';
+import { Fortuna_AE_daily_news__CORE } from './fortuna_AEdailyNews';
+import { Race2Real_AE_daily_news } from './race2real_AEdailyNews';
 
 const tempMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -62,54 +67,8 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
         const {brand, edition, product} = 
             await getBrandEditionProduct(DB, brand_name, product_name);
 
-        /**
-         * Folder types contain some of the general paths
-         */
-        const folderTypes: CORE.FolderType[] = await DB.SELECT(coreTables.folder_types);
-        const generalFolderKeys = ['dynamic_backgrounds', 'narration', 'logos'];
-        
-        let generalFolderPaths: {[key in 'dynamic_backgrounds' | 'narration' | 'logos']: string} = {} as {[key in 'dynamic_backgrounds' | 'narration' | 'logos']: string};
-        for (const generalFolderKey of generalFolderKeys) {
-            const folderType: CORE.FolderType | undefined = folderTypes.find(folder => folder.name === generalFolderKey);
-            if (!folderType) throw `Folder type not found: ${generalFolderKey}`;
-            generalFolderPaths[generalFolderKey as 'dynamic_backgrounds' | 'narration' | 'logos'] = 
-                path.resolve(
-                    renderMachine[folderType.root_folder as keyof DB.RenderMachine] as string, 
-                    folderType.folder_path as string
-                ).replace(/\\/g, '/');
-        }
-
-        // console.log(`generalFolderPaths: ${JSON.stringify(generalFolderPaths, null, 2)}`);
-        // return;
-        /*
-            generalFolderPaths: {
-                "dynamic_backgrounds": "G:/My Drive/Sports/S_Studio/S_S_Backgrounds/S_S_Backgrounds_$item_specific_sport_name",
-                "narration": "G:/My Drive/Sports/S_Studio/S_S_Narration/S_S_N_",
-                "logos": "G:/My Drive/Sports/S_Studio/S_S_Logos/S_B_$item_specific_sport_name"
-            }
-        */
-
-        /** 
-         * let's start building the path hierarchy.
-         * The dollar sign is used since that's the symbol
-         * that appears on the variables in the database
-         */
-        let $: { [key in Partial<CORE.Keys.AE.ExpectedPathVariables>]: string } = {
-            drive_path: renderMachine.drive_path,
-            qnap_path: renderMachine.qnap_path,
-            sport: `${edition.sport}/`, // edition.sport === 'General' ? 'Mixed/' : `${edition.sport}/`,
-            lang: edition.lang,
-            brand_path: `${renderMachine[brand.root_folder]}${brand.brand_path}`,
-            product_path: product.product_path,
-            
-            dynamic_backgrounds: generalFolderPaths.dynamic_backgrounds,
-            narration: generalFolderPaths.narration,
-            logos: generalFolderPaths.logos,
-        };
-        $.product_path = $.product_path.replace('$brand_path/', $.brand_path);
-        
-        if (!fs.existsSync($.brand_path)) throw `Brand folder not found: ${$.brand_path}`;
-        if (!fs.existsSync($.product_path)) throw `Product folder not found: ${$.product_path}`;
+        const $: {[key in CORE.Keys.AE.ExpectedPathVariables]: string} = 
+            await getExpectedVariables__AE({renderMachine, DB, brand, edition, product});
 
         /** 
          * get the buleprint of the subfolder structure for the given product.
@@ -121,27 +80,16 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
 
         /** 
          * build the subfolders as an object with the absolute paths
-         * where the keys are of @type {CORE.Keys.PS.ProductSubFolder}
+         * where the keys are of @type {CORE.Keys.AE.ProductSubFolder}
          */
         const subFolders: {[key in CORE.Keys.AE.ProductSubFolder]: string} = 
             buildAbsoluteSubfolderStructure__AE(subfolderStructure, $);
-        
-        // console.log(`subFolders: ${JSON.stringify(subFolders, null, 2)}`);
-        // return;
-        /*
-            subFolders: {
-                "dynamic_backgrounds": "G:/My Drive/Sports/S_Studio/S_S_Backgrounds/S_S_Backgrounds_$item_specific_sport_name",
-                "exports": "//NAS4Bay/Qnap3/Studio/Sports/S_Brands/Fortuna/AE/Daily News/exports/",
-                "narration": "G:/My Drive/Sports/S_Studio/S_S_Narration/S_S_N_General/RO/",
-                "presenters": "//NAS4Bay/Qnap3/Studio/Sports/S_Brands/Fortuna/presenters/RO/",
-                "saves": "//NAS4Bay/Qnap3/Studio/Sports/S_Brands/Fortuna/AE/Daily News/saves/",
-                "templates": "//NAS4Bay/Qnap3/Studio/Sports/S_Brands/Fortuna/AE/Daily News/templates/"
-            }
-        */
+
+        const backgrounds: {[key in DB.SportName]: string[]} = getBackgrounds__AE({subFolders});
 
         // const withLangTableKeys = baseTableKeys.map(key => `${key}__${$.lang}`) as TableKeys.CricketNewsEdition<typeof $.lang>[];
         const newsItems = await DB.SELECT<{[key: string]: string}>(`GeneralNews.RAPID__TRANS_NEWS`);
-        if (newsItems.length === 0) throw `No general news items found`;
+            if (newsItems.length === 0) throw `No general news items found`;
         
         /** 
          * because we want a to select a random template 
@@ -150,85 +98,17 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
          */
         const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
         let templateFiles: string[] = templateFolderContent.filter(file => file.endsWith('.aep'));
-        if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
-
-        const backgroundPaths: {[key in DB.SportName]: string} = {
-            Cricket: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Cricket'),
-            Football: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Football'),
-            Tennis: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Tennis'),
-            Motorsport: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport'),
-            Basketball: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball'),
-            Baseball: '',
-        }
-
-        for (let sportName in backgroundPaths){
-            if (sportName === 'Baseball') continue;
-            if (!fs.existsSync(backgroundPaths[sportName as DB.SportName])) 
-                throw `Background folder not found: ${backgroundPaths[sportName as DB.SportName]}`;
-        }
-
-        let backgrounds: {[key in DB.SportName]: string[]} = 
-        {
-            Cricket: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Cricket')),
-            Football: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Football')),
-            Tennis: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Tennis')),
-            Motorsport: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport')),
-            Basketball: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball')),
-            Baseball: [],
-        }
-        
-        for (let sportName in backgrounds){
-            if (sportName === 'Baseball') continue;
-            let backgroundFiles: string[] = backgrounds[sportName as DB.SportName].filter(
-                file => file.endsWith('.mp4')
-            );
-            if (backgroundFiles.length === 0) throw `No backgrounds found in folder: ${backgroundPaths[sportName as DB.SportName]}`;
-            backgrounds[sportName as DB.SportName] = backgroundFiles;
-        }
+            if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
 
         // now we know that we have at least 1 template and 1 background
 
+        
+
         const itemKeys: string[] = ['headline', 'sub_headline', 'narration'];
-        const item = newsItems[0];
+        const item: {[key: string]: string} = newsItems[0];
         // for (let item of newsItems) {
-            
-            /**
-             * Validate the data
-             * 
-             * There can be items with null values, so we'll skip those
-             * while all other cases will throw an error
-             */
-            let goNogo = true;
-            for (const key of itemKeys) {
-                // console.log(key);
-                if (!(key in item)) throw `Key not found in news item: ${key}`;
-                if (item[key] === null){
-                    goNogo = false;
-                    console.warn(`Ran into null key @ ${key}. Skipping.`);
-                    break;
-                }
-                if (item[key] === '' || !item[key] || item[key].length < 3){
-                    goNogo = false;
-                    console.warn(`Ran into empty key @ ${key}. Skipping.`);
-                    break;
-                }
-
-            }
-            if (!goNogo) return; // continue;
-
-            // const formattedDate = getFormattedDate();
-            
-            // const templateFullPath = path.resolve(subFolders.templates, templatePath).replace(/\\/g, '/');
-            // const backgroundFullPath = path.resolve(subFolders.staticBackgrounds, backgroundPath).replace(/\\/g, '/');
-
-            // console.log(`templateFullPath: ${templateFullPath}`);
-            // console.log(`backgroundFullPath: ${backgroundFullPath}`);
-
-            // if (!fs.existsSync(backgroundFullPath)) throw `Background not found: ${backgroundPath}`;
-            // if (!fs.existsSync(templateFullPath)) throw `Template not found: ${templatePath}`;
-
-            // const exportName = `${brand_name}-${item[`headline__${$.lang}`]}-${templateName}-${formattedDate}.png`;
-            // const saveName = `${brand_name}-${item.id}-${item[`headline__${$.lang}`]}-${templateName}-${formattedDate}.psd`;
+            goNoGo({item, itemKeys});
+                // if (!goNoGo) return; // continue;
 
         /**
          * Now for every item we get the texts and files
@@ -237,20 +117,11 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
          */
         const runThroughItems = async () => {
             const items: DB.Item.JoinedNews[] = await GENERALNEWS.getTransItemsByLang(DB, lang);
+                if (items.length === 0) throw `No items found for lang ${lang} in table RAPID__TRANS_NEWS`;
 
-            if (items.length === 0) throw `No items found for lang ${lang} in table RAPID__TRANS_NEWS`;
-
-            // console.log(`itemsLength: ${itemsLength}`);
-            // const i=0;
-
-            // for (const item of items) {
             for (let i=0; i<items.length; i++) {
                 const item = items[i];
-                // console.log(`item: ${i+1}: ${JSON.stringify(item)}`);
-                // return;
-                // firstly let's generate the texts and files (relative, cause we're creating a job)
-                // starting with the texts of the news item (headline, sub_headline)
-
+        
                 const populateItemTexts = () => {
                     for (const itemTextKey of itemTextKeys) {
                         const textLayerName =
@@ -268,46 +139,25 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
                 }
 
                 populateItemTexts();
-                // console.log(JSON.stringify(texts));
-                // return;
 
                 const populateItemFiles = () => {
-                    // for (const itemFileKey of itemFileKeys) { // narration, background, logo
-                    //     // narration needs to be converted to file_name
-                    //     const correctedItemKey = itemFileKey === 'narration' ? 'file_name' : itemFileKey;
-                    //     // const optionalLangAddition = itemFileKey === 'narration' ? `${lang}/` : '';
-                    //     let folderKey = itemFileKey as string;
-                    //     switch (itemFileKey) {
-                    //         case 'background':
-                    //             folderKey = 'dynamic_backgrounds';
-                    //             break;
-                    //         case 'logo':
-                    //             folderKey = 'logos';
-                    //             break;
-                    //     }
-                    //     let absoluteFilePath = `${absoluteFolderPaths[folderKey as keyof typeof absoluteFolderPaths]}`;
-                    //     absoluteFilePath += (itemFileKey === 'background' || itemFileKey === 'logo') ? `S_B_${item.sport_name}/` : ``;
-                    //     absoluteFilePath += item[correctedItemKey as keyof DB.Item.News];
 
-                       
-                    // }
-                    
-                    // throw `item: ${JSON.stringify(item)}`
+                    // console.log(`Narration: ${subFolders.narration}`);
+                    // console.log(`item.file_name: ${item.file_name}`);
 
                     const itemFiles: {[key: string ]: string} = {
                         narration: `${subFolders.narration}${item.file_name}`,
                         background: path.resolve(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name',item.sport_name),item.background).replace(/\\/g, '/'),
-                        logo: `${generalFolderPaths.logos.replace('$item_specific_sport_name',item.sport_name)}/${item.logo}`,
+                        logo: `${$.logos.replace('$item_specific_sport_name',item.sport_name)}/${item.logo}`,
                     }
 
                     // throw `itemFiles: ${JSON.stringify(itemFiles, null, 2)}`
 
                     for (let key in itemFiles){
                         const absoluteFilePath = itemFiles[key];
-                        // console.log(`absoluteFilePath for key: ${key} : ${absoluteFilePath}`);
 
                         if (!fs.existsSync(absoluteFilePath))
-                            throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
+                            throw `absoluteFilePath path does not exist: ${absoluteFilePath} for key: ${key}`;
                         files.push({
                             absolutePath: absoluteFilePath,
                             compositionName:
@@ -320,200 +170,10 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
                 }
                 
                 populateItemFiles();
-
-                // const hasStandings = // false;
-                //     !!item.show_standings && !!item.standings_league_season_id;
-                // // console.log(`hasStandings: ${hasStandings}`);
-
-                // if (hasStandings) {
-                //     /**
-                //      * If we have standings we throw loads of texts into the texts array
-                //      * 
-                //      * Here unfortunately we get the league_season_name
-                //      * in every row and need to place it once in the converted
-                //      * object
-                //      */
-                //     const populateStandingsTexts = async () => {
-                //         let standings: DB.StandingAug[] =
-                //             // await STANDINGS.getStandingsByLang(
-                //             await STANDINGS.getStandingsEN(
-                //                 DB,
-                //                 item.sport_name!,
-                //                 item.standings_league_season_id!,
-                //                 // lang
-                //             );
-
-                //         standings = standings.slice(0, 10); // we only need the top 10
-
-                //         // console.log(`%cStandings length: ${standings.length}`, `color: pink`);
-                //         // console.log(`%csample: ${JSON.stringify(standings, null, 4)}`, `color: pink`);
-
-                //         // Insert ranking header over the standings table
-                //         // console.log(`LeagueSeason_name: ${standings[0].league_season_name}`)
-                        
-                //         const leagueSeasonName = standings[0].league_season_name || ''; // will be inserted as text
-                //         const standingsHeaderLayerName = `Ranking-header-${i+1}`;
-                //         texts.push({
-                //             text: leagueSeasonName,
-                //             textLayerName: standingsHeaderLayerName,
-                //             recursiveInsertion: false,
-                //         });
-
-                //         // Standings title -- N, W, L
-                //         // structure ranking-stat${col#}-header${item#}
-                //         for (let j=0; j<standingTextKeys.length; j++) {
-                //             const standingTextKey = standingTextKeys[j];
-                //             if (standingTextKey === 'team_name') continue; // we don't need the team name (it's already in the item text
-                //             const textLayerName = `ranking-stat${j}-header${i+1}`;
-                //             const text: AE.Json.TextImport = {
-                //                 text: standingTextKey.charAt(0).toUpperCase(),
-                //                 textLayerName,
-                //                 recursiveInsertion: false,
-                //             };
-                //             texts.push(text);
-                //         }
-
-                //         standings.forEach((standing, index) => {
-                //             //console.log(JSON.stringify(standing));
-                            
-                //             if (index >= 10) return; // we only need the top 10
-
-                //             for (const standingTextKey of standingTextKeys) {
-                //                 //console.log(standingTextKey);
-                                
-                //                 let standingText =
-                //                     standing[standingTextKey as keyof DB.StandingAug];
-                //                 if (!standingText) standingText = ' ' // throw `No value for ${standingTextKey}`;
-
-                //                 const textLayerName = mappingFuncs[
-                //                     standingTextKey as DB.Jobs.Mapping.StandingTextKey
-                //                 ](item, standing);
-
-                //                 const text: AE.Json.TextImport = {
-                //                     text: standingText, // might be a number
-                //                     textLayerName,
-                //                     recursiveInsertion: false,
-                //                 };
-
-                //                 // console.log(`%cText: ${JSON.stringify(text, null, 4)}`, 'color: pink');
-
-                //                 texts.push(text);
-                //             }
-                //         });
-                //     }
-
-                //     await populateStandingsTexts();
-                // }
-
-                // //console.warn(`hasSchedule: ${item.show_next_matches} && ${item.schedule_league_season_id}`)
-                // const hasSchedule = !!item.show_next_matches && !!item.schedule_league_season_id;
-                // //console.log(`%chasSchedule: ${hasSchedule}`, 'color: Orange');
-
-                // if (hasSchedule) {
-                //     const populateScheduleTexts = async () => {
-                //         let schedule: DB.NextMatch_WithTeamNames[] = await NEXTMATCHES.getBySportNameAndLeagueSeasonId(
-                //             DB,
-                //             item.sport_name!,
-                //             item.schedule_league_season_id!
-                //         );
-
-                //         console.log(`%cSchedule length: ${schedule.length}`, `color: orange`);
-
-                //         if (schedule.length > 10) schedule = schedule.slice(0, 10); // we only need the top 10
-                //         // if (schedule.length < 10){ 
-                //         //     console.warn(`There are less than 10 matches in the schedule for sport ${item.sport_name} item ${item.id} league_season_id ${item.schedule_league_season_id}`);
-                //         //     return;
-                //         // }
-
-                //         for (let j=0; j<schedule.length; j++) {
-                //             const match = schedule[j];
-                //             const formatDateAndTime = () => {
-                //                 // convert the mysql timestamp to a js date
-                //                 const jsDate = new Date(match.start_time_timestamp);
-                //                 let hours = jsDate.getHours();
-                //                 const minutes = jsDate.getMinutes();
-                //                 const formattedHours = hours > 12 ? hours -= 12 : hours;
-                //                 const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
-                //                 const AMPM = hours > 12 ? 'PM' : 'AM';
-
-                //                 // console.log(`%cstart_time_timestamp: ${match.start_time_timestamp}`, 'color: Orange');
-                                
-                //                 // const splittedTimeStamp = String(match.start_time_timestamp).split('T');
-                //                 // const splittedTimeStamp = jsDate.split(' ');
-                //                 // const splittedDate = splittedTimeStamp[0].split('-');
-                //                 // const splittedTime = splittedTimeStamp[1].split(':');
-                //                 // temporarily we'll use the dd/mm/yyyy format for the date
-                //                 // and hh:mm for the time
-                //                 const formattedDate = `${jsDate.getDate()} ${tempMonths[jsDate.getMonth() + 1]}`;
-                //                 const formattedTime = `${formattedHours}:${formattedMinutes} ${AMPM}`;
-                //                 return [formattedDate, formattedTime];
-                //             }
-
-                //             const [formattedDate, formattedTime] = formatDateAndTime();
-                            
-                //             const dateLayerName = mappingFuncs.scheduleMatchDate(i+1, j+1);
-                //             const timeLayerName = mappingFuncs.scheduleMatchTime(i+1, j+1);
-                //             const homeTeamLayerName = mappingFuncs.scheduleHomeTeam(i+1, j+1);
-                //             const awayTeamLayerName = mappingFuncs.scheduleAwayTeam(i+1, j+1);
-
-                //             texts.push({
-                //                 text: formattedDate,
-                //                 textLayerName: dateLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-                //             texts.push({
-                //                 text: formattedTime,
-                //                 textLayerName: timeLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-                //             texts.push({
-                //                 text: match.home_team_name,
-                //                 textLayerName: homeTeamLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-                //             texts.push({
-                //                 text: match.away_team_name,
-                //                 textLayerName: awayTeamLayerName,
-                //                 recursiveInsertion: false,
-                //             });
-
-                //             console.log(`%ctime: ${formattedDate} ${formattedTime}\nhome: ${match.home_team_name} away: ${match.away_team_name}`, 'color: Cyan');
-                //         }
-                        
-                //     }
-
-                //     await populateScheduleTexts();
-
-                //     /**
-                //      * Every team is supposed to have a logo
-                //      * Currently there's no mechanism for this
-                //      */
-                //     const populateScheduleFiles = async () => {
-                        
-                //     }
-                // }
             } // end items for loop
         }
 
         await runThroughItems();
-
-
-
-        /**
-         * The trimming can be done immediately after the presenter files have been inserted
-         */
-        // const trimPresenterFiles = () => {
-        //     const compNames = ['Presenter Open','Presenter Close'];
-        //     for (const compName of compNames) {
-        //         const sync: AE.Json.TS.Trim = {
-        //             method: 'trimByAudio',
-        //             layerOrCompName: compName,
-        //         };
-        //         trimSyncData.push(sync);
-        //     }
-        // }
-
-        // trimPresenterFiles();
 
         const trimNarration = () => {
             // firstly we trim the narration comps
@@ -790,5 +450,8 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
     }
 }
 
+// Fortuna_SNS_AE_Schedule__CORE();
 // testCalendarSNSAE();
-Fortuna_SNS_AE_Ranking__CORE();
+// Fortuna_SNS_AE_Ranking__CORE();
+
+Race2Real_AE_daily_news();

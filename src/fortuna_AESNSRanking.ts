@@ -62,14 +62,16 @@ export async function Fortuna_SNS_AE_Ranking__CORE() {
          */
         const folderTypes: CORE.FolderType[] = await DB.SELECT(coreTables.folder_types);
         const generalFolderKeys = ['dynamic_backgrounds', 'logos'];
-        
+
         let generalFolderPaths: {[key in 'dynamic_backgrounds' | 'logos']: string} = {} as {[key in 'dynamic_backgrounds' | 'narration' | 'logos']: string};
         for (const generalFolderKey of generalFolderKeys) {
             const folderType: CORE.FolderType | undefined = folderTypes.find(folder => folder.name === generalFolderKey);
             if (!folderType) throw `Folder type not found: ${generalFolderKey}`;
+            
+            const rootFolder = String(renderMachine[folderType.root_folder as keyof DB.RenderMachine])            
             generalFolderPaths[generalFolderKey as 'dynamic_backgrounds' | 'logos'] = 
                 path.resolve(
-                    renderMachine[folderType.root_folder as keyof DB.RenderMachine] as string, 
+                    rootFolder, 
                     folderType.folder_path as string
                 ).replace(/\\/g, '/');
         }
@@ -102,7 +104,7 @@ export async function Fortuna_SNS_AE_Ranking__CORE() {
             logos: generalFolderPaths.logos,
         };
         $.product_path = $.product_path.replace('$brand_path/', $.brand_path);
-        
+
         if (!fs.existsSync($.brand_path)) throw `Brand folder not found: ${$.brand_path}`;
         if (!fs.existsSync($.product_path)) throw `Product folder not found: ${$.product_path}`;
 

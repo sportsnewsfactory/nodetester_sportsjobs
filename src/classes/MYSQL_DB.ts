@@ -1,27 +1,18 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import {
     createPool,
-    FieldPacket,
     OkPacket,
     Pool,
     PoolOptions,
     ResultSetHeader,
-    RowDataPacket,
 } from 'mysql2/promise';
 import { FORMAT } from './FORMAT';
-
-export interface ConditionClause {
-    [key: string]: any;
-}
-
-export interface JoinClause {
-    table: string; // Name of the table to join with
-    type: 'INNER' | 'LEFT' | 'RIGHT' | 'FULL'; // Type of join
-    on: string; // Join condition
-    columns: string[]; // the columns to be selected from the right table
-}
+import { MYSQL } from '../types/MYSQL';
 
 export class MYSQL_DB {
-    static config: PoolOptions = {
+    private static config: PoolOptions = {
         user: process.env.DB_USER,
         password: process.env.DB_PWD,
         host: process.env.DB_HOST,
@@ -30,53 +21,59 @@ export class MYSQL_DB {
         multipleStatements: true,
     } as PoolOptions;
 
+    errors: string[];
     pool: Pool;
 
     constructor() {
         this.pool = {} as Pool;
+        this.errors = [];
     }
     /**
      * Connect to DB using the config in the static section
      * This version assumes we have several DBs in a given cluster
      */
-    createPool() {
+    createPool(clusterName?: string) {
         try {
-            const config: PoolOptions = {
+            let config: PoolOptions = {
                 ...MYSQL_DB.config,
             };
+            if (clusterName) {
+                config.user = process.env[`${clusterName}_DB_USER`];
+                config.password = process.env[`${clusterName}_DB_PWD`];
+                config.host = process.env[`${clusterName}_DB_HOST`];
+            }
+
             this.pool = createPool(config);
+            console.log(`Connected to MySql DB`);
+
             return 'MySql pool generated successfully';
         } catch (e) {
             console.error('Error: ', e);
             throw new Error('failed to initialized pool');
         }
     }
-    private async executeQuery(query: string, params: any[]): Promise<any> {
-        try {
-            return await this.pool.execute(query, params);
-        } catch (error) {
-            console.error(`Failed to execute query: ${query}`, error);
-            throw new Error(`Query execution failed: ${(error as Error).message}`);
-        }
-    }
-
-    processResult<T>(result: any): T[] {
-        if (Array.isArray(result) && result.length > 0 && Array.isArray(result[0])) {
-            return result[0] as T[];
-        } else {
-            return [];
-        }
-    }
-
+    /**
+     * The brainless version which accepts very well
+     * defined variables and writes the SQL so that
+     * there's no room for SQL mistakes. There's a clear
+     * separation between SQL and JS. MUCH better...
+     * @param tableName
+     * @param whereClause
+     * @returns
+     */
     async SELECT<T>(
         tableName: string,
         options?: {
-            whereClause?: ConditionClause;
-            likeClause?: ConditionClause;
-            joinClause?: JoinClause;
+            whereClause?: MYSQL.Clause.Condition;
+            likeClause?: MYSQL.Clause.Condition;
+            joinClause?: MYSQL.Clause.Join;
         }
     ): Promise<T[]> {
-        if (!this.pool) throw new Error('Database connection pool not available.');
+        if (!this.pool) {
+            throw new Error(
+                'Pool was not created. Ensure the pool is created when running the app.'
+            );
+        }
 
         try {
             const { whereClause, likeClause, joinClause } = options || {};
@@ -97,7 +94,7 @@ export class MYSQL_DB {
                 const columns = joinClause.columns
                     .map((col: string) => `${joinClause.table}.${col}`)
                     .join(', ');
-                console.log(`columns: ${columns}`);
+                //console.log(`columns: ${columns}`);
                 selectStatement = `SELECT ${tableName}.*, ${columns}\n`;
             }
 
@@ -106,7 +103,7 @@ export class MYSQL_DB {
 
             if (joinClause) {
                 joinClauseSQL = `${joinClause.type} JOIN ${joinClause.table} ON ${joinClause.on}`;
-                console.log(`joinClause: ${joinClause}`);
+                //console.log(`joinClause: ${joinClause}`);
                 // Combine SELECT and JOIN clauses
                 selectStatement += `FROM ${tableName}\n${joinClauseSQL}`;
             }
@@ -130,21 +127,39 @@ export class MYSQL_DB {
 
             const params = [...whereClauseParams, ...likeClauseParams];
 
-            console.log(`SQL: ${selectStatement} Params: ${params.join(', ')}`);
+            // console.log(`SQL: ${selectStatement} Params: ${params.join(', ')}`);
 
             // return [selectStatement, params];
             // Execute the query
             const result = await this.executeQuery(selectStatement, params);
             return this.processResult<T>(result);
         } catch (e) {
-            console.error(`Error in SELECT: ${(e as Error).message}`, e);
-            throw new Error(`Error in SELECT: ${(e as Error).message}`);
+            console.warn(`Error in SELECT: ${e}`);
+            throw new Error(`Error in SELECT: ${e}`);
         }
     }
+    private async executeQuery(query: string, params: any[]) {
+        // console.log(`query: ${query}`);
+        return await this.pool.execute(query + ';', params);
+    }
+    private processResult<T>(result: any): T[] {
+        if (
+            Array.isArray(result) &&
+            result.length > 0 &&
+            Array.isArray(result[0])
+        ) {
+            return result[0] as T[];
+        } else {
+            return [];
+        }
+    }
+    /**
+     * Here the whereClause is not optional
+     */
     async UPDATE(
         table: string,
         values: Record<string, any>,
-        whereClause: ConditionClause
+        whereClause: MYSQL.Clause.Condition
     ): Promise<boolean> {
         if (!this.pool) {
             throw new Error(
@@ -158,14 +173,14 @@ export class MYSQL_DB {
                 whereClause
             );
 
-            console.log(`whereClauseSQL`, whereClauseSQL);
-            console.log('whereClauseParams', whereClauseParams);
+            //console.log(`whereClauseSQL`, whereClauseSQL);
+            //console.log('whereClauseParams', whereClauseParams);
 
             const sql = `UPDATE ${table} SET ${setClause} WHERE ${whereClauseSQL}`;
             const params = [...setParams, ...whereClauseParams];
 
-            console.log(`sql`, sql);
-            console.log('params', params);
+            //console.log(`sql`, sql);
+            //console.log('params', params);
 
             const [result] = await this.pool.execute(sql, params);
             return (result as any).affectedRows === 1;
@@ -229,137 +244,174 @@ export class MYSQL_DB {
      */
     async INSERT_BATCH_OVERWRITE<T extends Object>(
         data: T[],
-        tableName: string,
-        ignore: boolean
-    ): Promise<boolean> {
+        tableName: string
+    ) {
         if (!this.pool) {
             throw new Error(
                 'Pool was not created. Ensure the pool is created when running the app.'
             );
         }
         try {
-            // Build an array of value placeholders for each data item
+            // Check if data is empty
+            if (!data.length) {
+                throw new Error('No data provided for batch insert.');
+            }
+
+            // Log the incoming data
+            console.log('Data:', JSON.stringify(data, null, 2));
+
+            // Construct the value placeholders and flatten the data
             const numKeys = Object.keys(data[0]).length;
             const oneArrayPlaceHolder = `(${Array(numKeys)
                 .fill('?')
                 .join(', ')})`;
-            //console.warn(`Placeholder: ${oneArrayPlaceHolder}`);
             const valuePlaceholders = data
                 .map(() => oneArrayPlaceHolder)
                 .join(', ');
 
-            // Flatten the data array to create a single array of values
-            // const values = data.flatMap((item) => Object.values(item));
+            // Convert dates and flatten data
             const values = data.flatMap((item) =>
-                Object.values(item).map((value) =>
-                    value !== undefined ? value : null
-                )
+                Object.values(item).map((value) => {
+                    return value !== undefined ? value : null;
+                })
             );
 
-            // Define the SQL query with multiple rows
-            const columns = Object.keys(data[0]).join(', ');
-            const updateColumns = Object.keys(data[0])
-                .map((col) => `${col}=VALUES(${col})`)
+            const columns = Object.keys(data[0])
+                .map((col) => `\`${col}\``)
                 .join(', ');
-            let sql = `INSERT`;
-            sql += ignore ? ' IGNORE' : '';
-            sql += ` INTO ${tableName} (${columns}) VALUES ${valuePlaceholders}`;
-            sql += ignore ? '' : ` ON DUPLICATE KEY UPDATE ${updateColumns}`;
-            // Execute the query with all the values
-            await this.pool.execute(sql, values);
+            const updateColumns = Object.keys(data[0])
+                .map((col) => `\`${col}\` = VALUES(\`${col}\`)`)
+                .join(', ');
 
-            console.log('INSERT_BATCH_OVERWRITE: Data inserted successfully.');
-            return true;
+            // Construct the SQL query
+            let sql = `INSERT INTO ${tableName} (${columns}) VALUES ${valuePlaceholders}`;
+            sql += ` ON DUPLICATE KEY UPDATE ${updateColumns}`;
+
+            // Detailed logging
+            // console.log('Final SQL Query:', sql);
+            // console.log('Query Parameters:', values);
+
+            // Execute the query
+            const [result]: [ResultSetHeader, any] = await this.pool.execute(
+                sql,
+                values
+            );
+
+            // Log the result object for debugging
+            console.log(
+                'INSERT_BATCH_OVERWRITE result:',
+                JSON.stringify(result, null, 4)
+            );
+
+            const affected = result.affectedRows || 0;
+            const changed = result.changedRows || 0;
+            const inserted = affected - changed;
+
+            console.log(
+                `INSERT_BATCH_OVERWRITE: ${affected} rows affected, ${changed} rows changed, ${inserted} rows inserted.`
+            );
+            return { inserted, affected, changed };
         } catch (error) {
-            throw new Error(`Error in INSERT_BATCH_OVERWRITE:\n\n${error}`);
+            console.error('SQL Execution Error:', error);
+            throw new Error(
+                `INSERT_BATCH_OVERWRITE Error: ${(error as Error).message}`
+            );
         }
     }
-    /**
-     * remove all entries in @param table
-     */
-    async cleanTable(table: string): Promise<boolean> {
-        try {
-            if (!this.pool) {
-                throw new Error(
-                    'Pool was not created. Ensure the pool is created when running the app.'
-                );
-            }
-            const deleteAllRecordsSql = `DELETE FROM ${table};`;
-            await this.pool.execute(deleteAllRecordsSql);
-            return true;
-        } catch (e) {
-            throw new Error(`cleanTable failed for table: ${table}: ${e}`);
-        }
-    }
-    /**
-     * Remove entried in @param table
-     * where the column @param columnName
-     * is older than @param targetDate of @type {Date}
-     */
-    async removeOldEntries(
+    async DELETE(
         table: string,
-        targetDate: Date,
-        columnName: string
-    ) {
-        const funcName = `removeOldEntries`;
-        // console.log(funcName);
-        try {
-            const formattedDate = this.formatDateToSQLTimestamp(targetDate);
-            const removeOldSqlStatement = `
-            DELETE FROM ${table}
-            WHERE ${columnName} < '${formattedDate}';
-        `;
-
-            await this.pool.execute(removeOldSqlStatement);
-        } catch (e) {
-            throw new Error(`Error in ${funcName}: ${e}`);
-        }
-    }
-    /**
-     * This function is used to insert a single row into a table
-     * and return the ID of the inserted row.
-     * @param table
-     * @param values
-     * @returns
-     */
-    async INSERT_GETID(
-        table: string,
-        values: { [key: string]: any }
-    ): Promise<
-        [RowDataPacket[] | RowDataPacket[][] | ResultSetHeader, FieldPacket[]]
-    > {
-        console.log(`INSERT_GETID`);
+        whereClause: MYSQL.Clause.Condition
+    ): Promise<boolean> {
         if (!this.pool) {
             throw new Error(
-                'Pool was not created. Ensure pool is created when running the app.'
+                'Pool was not created. Ensure the pool is created when running the app.'
             );
         }
 
-        const [setClause, setParams] = FORMAT.setClause(values);
-        const sql = `INSERT INTO ${table} SET ${setClause}`;
-        const params = [...setParams];
-
-        // for debuggin we log the simple sql statement
-        const plainSql = sql.replace(/\?/g, (match) =>
-            typeof params[0] === 'string'
-                ? `'${params.shift()}'`
-                : params.shift()
-        );
-
         try {
-            return await this.pool.execute(plainSql);
+            const [whereClauseSQL, whereClauseParams] = FORMAT.whereClause(
+                table,
+                whereClause
+            );
+
+            const sql = `DELETE FROM ${table} WHERE ${whereClauseSQL}`;
+            const params = [...whereClauseParams];
+
+            const [result] = await this.pool.execute(sql, params);
+            return (result as OkPacket).affectedRows > 0;
         } catch (e) {
-            console.error(e);
-            throw new Error(`Error in INSERT_GETID`);
+            throw new Error(`Error in DELETE: ${e}`);
         }
     }
-    formatDateToSQLTimestamp(date: Date): string {
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const day = date.getDate().toString().padStart(2, '0');
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const seconds = date.getSeconds().toString().padStart(2, '0');
-        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    async getDatabaseNames(): Promise<string[]> {
+        if (!this.pool) {
+            throw new Error(
+                'Pool was not created. Ensure the pool is created when running the app.'
+            );
+        }
+
+        try {
+            const [rows]: [any[], any] = await this.pool.query(
+                'SHOW DATABASES'
+            );
+            return rows.map((row: any) => row.Database as string);
+        } catch (e) {
+            console.warn(`Error in getDatabaseNames: ${e}`);
+            throw new Error(`Error in getDatabaseNames: ${e}`);
+        }
+    }
+    async getTableNames(databaseName: string): Promise<string[]> {
+        if (!this.pool) {
+            throw new Error(
+                'Pool was not created. Ensure the pool is created when running the app.'
+            );
+        }
+
+        try {
+            // Use backticks around the database name to handle special characters
+            const [rows]: [any[], any] = await this.pool.query(
+                `SHOW TABLES FROM \`${databaseName}\``
+            );
+            return rows.map((row: any) => Object.values(row)[0] as string);
+        } catch (e) {
+            console.warn(`Error in getTableNames: ${e}`);
+            throw new Error(`Error in getTableNames: ${e}`);
+        }
+    }
+    async getColumnNames(
+        databaseName: string,
+        tableName: string
+    ): Promise<
+        {
+            name: string;
+            type: string;
+            auto_increment: true | undefined;
+            primary_key: boolean;
+        }[]
+    > {
+        if (!this.pool) {
+            throw new Error(
+                'Pool was not created. Ensure the pool is created when running the app.'
+            );
+        }
+
+        try {
+            // Use backticks around the database and table names to handle special characters
+            const sql = `SHOW COLUMNS FROM \`${databaseName}\`.\`${tableName}\``;
+            console.log(`sql: ${sql}`);
+            const [rows]: [any[], any] = await this.pool.query(sql);
+    
+            return rows.map((row: any) => ({
+                name: row.Field as string,
+                type: row.Type as string,
+                auto_increment: row.Extra.includes('auto_increment')
+                    ? true
+                    : undefined,
+                primary_key: row.Key === 'PRI',
+            }));
+        } catch (e) {
+            console.warn(`Error in getColumnNames: ${e}`);
+            throw new Error(`Error in getColumnNames: ${e}`);
+        }
     }
 }

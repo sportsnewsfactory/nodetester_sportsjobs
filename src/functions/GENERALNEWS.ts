@@ -40,9 +40,14 @@ export const GENERALNEWS = {
 
             const itemsResult = await DB.pool.execute(sql);
             const items = itemsResult[0] as DB.Item.JoinedNews[];
-            return items
+            const sortedSliced = items
                 .sort((a, b) => Number(a.id) - Number(b.id))
                 .slice(0, 5);
+
+            const expectedNumberOfNewsItems = 5;
+            if (sortedSliced.length !== expectedNumberOfNewsItems) throw `Wrong number of newsItems: ${sortedSliced.length}`;
+
+            return sortedSliced;
         } catch (e) {
             throw `${funcName} failed with: ${e}`;
         }

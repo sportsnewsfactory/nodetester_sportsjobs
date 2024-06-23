@@ -28,7 +28,7 @@ export function buildAbsoluteSubfolderStructure__AE(
 
     for (const subfolder of subfolderStructure) {
         // if (!AESubfolderArray.includes(subfolder.folder_type)) throw `Subfolder key not found: ${subfolder.folder_type}`;
-        console.log(`%c${JSON.stringify(subfolder)}`, 'color: pink');
+        // console.log(`%c${JSON.stringify(subfolder)}`, 'color: pink');
         const expectedVariables: string[] = [];
         if (!subfolder.expected_variables.includes(',')) expectedVariables.push(subfolder.expected_variables);
         else expectedVariables.push(...subfolder.expected_variables.split(', '));

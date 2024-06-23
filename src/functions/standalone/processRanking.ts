@@ -92,7 +92,7 @@ export async function processRanking({
             // standings.forEach((standing, index) => {
                 
                 standingsAttributes.forEach(attribute => {
-                    const textLayerName = generateLayerName('txt', itemIndex + 1, 'standings', { rowNum: index + 1, attribute });
+                    const textLayerName = generateLayerName('txt', itemIndex + 1, 'standings', { rowNum: j + 1, attribute });
                     const text: AE.Json.TextImport = {
                         text: standing[attribute],
                         textLayerName,
@@ -138,7 +138,7 @@ export async function processRanking({
             });
         }
     }
-    return { files, texts };
+    return texts;
 }
 
 /* 

@@ -14,23 +14,25 @@ import { DB } from './types/DB';
 import { PATHS } from './functions/PATHS';
 import { itemTextKeys, mappingFuncs, itemFileKeys, standingTextKeys } from './functions/MAPPING';
 import { PRESENTERSCHEMES } from './functions/PRESENTERSCHEMES';
-import { getPresenterSchemeFiles } from './functions/Presenters';
+import { DailyPresenterScheme, getDailyPresenterScheme, getPresenterSchemeFiles } from './functions/Presenters';
 import { NEXTMATCHES } from './functions/NEXTMATCHES';
 import { CORE } from './types/CORE';
 import { coreTables } from './constants/coreTables';
 import { getBrandEditionProduct } from './functions/helper/getBrandEditionProduct';
 import { buildAbsoluteSubfolderStructure__AE } from './functions/helper/buildAbsoluteSubfolderStructure';
 import path from 'path';
+import { TMPTables } from './constants/templateTables';
+import { Template } from './types/CORE/Template';
 
 /**
- * Testing Fortuna AE daily edition with the new core tables
- * 
- * Here we're minimizing the usage of anonymous classes
- * containing functions and instead using the generic SELECT
+ * Testing Race2Real AE daily edition with the new core tables
  */
-export async function Fortuna_AE_daily_news__CORE() {    
-    const DB = new MYSQL_DB();
-    DB.createPool();
+export async function Race2Real_AE_daily_news() {    
+    const SportsDB = new MYSQL_DB();
+    SportsDB.createPool('SPORTS');
+
+    const BackofficeDB = new MYSQL_DB();
+    BackofficeDB.createPool('BACKOFFICE');
 
     try {
         /**
@@ -48,8 +50,9 @@ export async function Fortuna_AE_daily_news__CORE() {
         const brand_name: string = 'Race2Real';
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
         const lang: CORE.Keys.Lang = 'HI';
-        const renderMachine: DB.RenderMachine = await identifyRenderMachine(DB);
-        
+        const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
+        const templateName: string = 'mixed-sports1';
+
         const now = new Date();
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
@@ -59,7 +62,7 @@ export async function Fortuna_AE_daily_news__CORE() {
         let trimSyncData: AE.Json.TS.Sequence = [];
 
         const {brand, edition, product} = 
-            await getBrandEditionProduct(DB, brand_name, product_name);
+            await getBrandEditionProduct(SportsDB, brand_name, product_name);
 
         // console.log(`brand: ${JSON.stringify(brand, null, 4)}`);
         // console.log(`edition: ${JSON.stringify(edition, null, 4)}`);
@@ -70,7 +73,7 @@ export async function Fortuna_AE_daily_news__CORE() {
         /**
          * Folder types contain some of the general paths
          */
-        const folderTypes: CORE.FolderType[] = await DB.SELECT(coreTables.folder_types);
+        const folderTypes: CORE.FolderType[] = await SportsDB.SELECT(coreTables.folder_types);
         const generalFolderKeys = ['dynamic_backgrounds', 'narration', 'logos'];
         
         let generalFolderPaths: {[key in 'dynamic_backgrounds' | 'narration' | 'logos']: string} = {} as {[key in 'dynamic_backgrounds' | 'narration' | 'logos']: string};
@@ -120,7 +123,7 @@ export async function Fortuna_AE_daily_news__CORE() {
          * get the buleprint of the subfolder structure for the given product.
          */
         let subfolderStructure: CORE.AE.ProductSubFolder[] = 
-            await DB.SELECT(coreTables.product_subfolders,
+            await SportsDB.SELECT(coreTables.product_subfolders,
             {whereClause: {product_name: edition.product_name}}
         );
 
@@ -144,128 +147,250 @@ export async function Fortuna_AE_daily_news__CORE() {
             }
         */
 
-        // const withLangTableKeys = baseTableKeys.map(key => `${key}__${$.lang}`) as TableKeys.CricketNewsEdition<typeof $.lang>[];
-        const allTransNewsItems = await DB.SELECT<{[key: string]: string}>(`GeneralNews.RAPID__TRANS_NEWS`);
-        if (allTransNewsItems.length === 0) throw `No general news items found`;
-        
-        // console.log(`newsItems: ${newsItems.length}`);
-        // return;
-
-        /** 
-         * because we want a to select a random template 
-         * and background and take the selected file out of the pool
-         * we first create the initial
-         */
+        // Are we still going with random template?
         const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
         let templateFiles: string[] = templateFolderContent.filter(file => file.endsWith('.aep'));
         if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
 
-        const backgroundPaths: {[key in DB.SportName]: string} = {
-            Cricket: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Cricket'),
-            Football: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Football'),
-            Tennis: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Tennis'),
-            Motorsport: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport'),
-            Basketball: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball'),
-            Baseball: '',
-        }
+        // const backgroundPaths: {[key in DB.SportName]: string} = {
+        //     Cricket: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Cricket'),
+        //     Football: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Football'),
+        //     Tennis: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Tennis'),
+        //     Motorsport: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport'),
+        //     Basketball: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball'),
+        //     Baseball: '',
+        // }
 
-        for (let sportName in backgroundPaths){
-            if (sportName === 'Baseball') continue;
-            if (!fs.existsSync(backgroundPaths[sportName as DB.SportName])) 
-                throw `Background folder not found: ${backgroundPaths[sportName as DB.SportName]}`;
-        }
+        // for (let sportName in backgroundPaths){
+        //     if (sportName === 'Baseball') continue;
+        //     if (!fs.existsSync(backgroundPaths[sportName as DB.SportName])) 
+        //         throw `Background folder not found: ${backgroundPaths[sportName as DB.SportName]}`;
+        // }
 
-        let backgrounds: {[key in DB.SportName]: string[]} = 
-        {
-            Cricket: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Cricket')),
-            Football: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Football')),
-            Tennis: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Tennis')),
-            Motorsport: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport')),
-            Basketball: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball')),
-            Baseball: [],
-        }
+        // let backgrounds: {[key in DB.SportName]: string[]} = 
+        // {
+        //     Cricket: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Cricket')),
+        //     Football: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Football')),
+        //     Tennis: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Tennis')),
+        //     Motorsport: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport')),
+        //     Basketball: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball')),
+        //     Baseball: [],
+        // }
         
-        for (let sportName in backgrounds){
-            if (sportName === 'Baseball') continue;
-            let backgroundFiles: string[] = backgrounds[sportName as DB.SportName].filter(
-                file => file.endsWith('.mp4')
-            );
-            if (backgroundFiles.length === 0) throw `No backgrounds found in folder: ${backgroundPaths[sportName as DB.SportName]}`;
-            backgrounds[sportName as DB.SportName] = backgroundFiles;
+        // for (let sportName in backgrounds){
+        //     if (sportName === 'Baseball') continue;
+        //     let backgroundFiles: string[] = backgrounds[sportName as DB.SportName].filter(
+        //         file => file.endsWith('.mp4')
+        //     );
+        //     if (backgroundFiles.length === 0) throw `No backgrounds found in folder: ${backgroundPaths[sportName as DB.SportName]}`;
+        //     backgrounds[sportName as DB.SportName] = backgroundFiles;
+        // }
+
+        /**
+         * Here we renewing the procedure to use
+         * the new structure of the DB
+         * We'll start with getting our raw data
+         * then we will manipulate the data to fit the actions scheme
+         * and then we'll export a sample json file.
+         * 
+         * @param newsItems and @param presenterFiles
+         * contain all of the raw data we need
+         */
+        const newsItems: DB.Item.JoinedNews[] = 
+            await GENERALNEWS.getTransItemsByLang(SportsDB, lang);
+
+        // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
+        // return;
+        const dailyPresenterFilePaths: DailyPresenterScheme = 
+            await getDailyPresenterScheme(SportsDB, edition, now, subFolders.presenters);
+        
+        /**
+         * Now let's get the template total structure:
+         * clusters, objects, elements, actions, mainLayers
+         */
+
+        const templateMainLayers = await BackofficeDB.SELECT(TMPTables.templateMainLayers, {whereClause: {template_name: templateName}});
+        const templateClusters: Template.Record.Cluster[] = await BackofficeDB.SELECT(TMPTables.templateClusters, {whereClause: {template_name: templateName}});
+        const templateElements: Template.Record.Element[] = await BackofficeDB.SELECT(TMPTables.templateElements, {whereClause: {template_name: templateName}});
+        
+        const objectElements: Template.Obj.Element[] = await BackofficeDB.SELECT(TMPTables.objectElements);
+
+        // const templateActions = await BackofficeDB.SELECT(TMPTables.templateActions, {whereClause: {template_name: templateName}});
+        // const clusterActions = await BackofficeDB.SELECT(TMPTables.actions, {whereClause: {template_name: templateName}});
+
+        const elementBluePrints: Template.Element.DB_Blueprint[] = await BackofficeDB.SELECT(TMPTables.elements);
+        const objects: Template.Obj[] = await BackofficeDB.SELECT(TMPTables.objects);
+        const actions: Template.Action[] = await BackofficeDB.SELECT(TMPTables.actions);
+        const elementActions: Template.Element.Action[] = await BackofficeDB.SELECT(TMPTables.elementActions);
+
+        /**
+         * We start with processing the smallest building blocks @param elements
+         * and build up from there... @param clusters, @param templateMainLayers.
+         * We need to start only with the elements that are of types:
+         * 'footageFile' | 'text' | 'audioFile' as inserting files and texts 
+         * is the first step
+         */
+        // let stage01_elements: Template.Element.Realized[] = [];
+        for (const templateElement of templateElements){
+            
+            const elementBluePrint: Template.Element.DB_Blueprint | undefined = elementBluePrints.find(e => e.element_name === templateElement.element_name);
+            if (!elementBluePrint) throw `Element blueprint not found for element ${templateElement.element_name} in template ${templateName}`;
+
+            if (elementBluePrint.element_type === 'preexisting') continue;
+            /**
+             * Now we have the blueprint.
+             * We need to resolve the naming scheme and variables
+             * example of the only template level element that answers
+             * to this category is the 'presenter' elements
+             * element_type: 'footageFile'
+             * naming_scheme: presenter-$sub_type
+             * variables: $sub_type ('open' | 'close')
+             */
+            
+            let layerCompName: string = elementBluePrint.naming_scheme
+                .replace('$sub_type', templateElement.element_subtype || '');
+
+            // let realizedElement: Template.Element.Realized = {
+            //     element_name: elementBluePrint.element_name,
+            //     element_type: elementBluePrint.element_type,
+            //     container_type: elementBluePrint.container_type,
+            //     label_color: elementBluePrint.label_color,
+            //     layerCompName,
+            //     isOptional: false,
+            // }
+
+            let elementActions = actions.filter(action => action.element_name === templateElement.element_name);
+
+            /**
+             * Let's try getting the content now
+             * We know that the element presenter is a footageFile
+             */
+            if (elementBluePrint.element_name === 'presenter') {
+                const presenterFilePath: string = dailyPresenterFilePaths[templateElement.element_subtype as keyof DailyPresenterScheme];
+                if (!fs.existsSync(presenterFilePath))
+                    throw `Presenter file path does not exist: ${presenterFilePath}`;
+                files.push({
+                    absolutePath: presenterFilePath,
+                    compositionName: layerCompName,
+                    resizeAction: 'fitToComp',
+                });
+            }
+            // stage01_elements.push(realizedElement)
         }
+
+        console.log(`files: ${JSON.stringify(files, null, 4)}`);
+        return;
+
+        /**
+         * The news-item objects are the only objects
+         * that we need to calculate the number of instances
+         * accross multiple clusters.
+         * Perhaps in future we'll think of a better way to do this
+         */
+        let newsItemNumInstances = templateClusters
+            .filter(cluster => cluster.cluster_name === 'news-cluster')
+            .map(cluster => Number(cluster.num_object_instances))
+            .reduce((acc, val) => acc + val, 0);
+
+        let newsItemCounter = 0;
+        /**
+         * With the objects we get to their elements
+         * via the objects actions @param TMPTables.objectActions
+         */
+        for (const cluster of templateClusters){
+            // console.log(`%cCluster: ${JSON.stringify(cluster, null, 4)}`,'color: pink');
+            const clusterObjects: Template.Obj[] = objects.filter(obj => obj.cluster_name === cluster.cluster_name);
+
+            // for debugging purposes
+            if (cluster.cluster_name !== 'news-cluster') continue;
+
+            for (const obj of clusterObjects){
+                // console.log(`%cclusterObject: ${JSON.stringify(obj, null, 4)}`,'color: orange');
+                let numItem: number = 0;
+                let numObjectInstances = Number(cluster.num_object_instances);
+                
+                while (numItem <= numObjectInstances){
+                    if (obj.object_name === 'news-item') newsItemCounter++;
+                    numItem++;
+
+                    const objElements: Template.Obj.Element[] = objectElements.filter(e => e.object_name === obj.object_name);
+                    for (const objElement of objElements){
+                        
+                        const itemType: string = objElement.object_name; // i.e. 'news-item'
+                        const elementBluePrint: Template.Element.DB_Blueprint | undefined = elementBluePrints.find(e => e.element_name === objElement.element_name);
+                        if (!elementBluePrint) throw `Element blueprint not found for element ${objElement.element_name} in object ${obj.object_name} in cluster ${cluster.cluster_name} in template ${templateName}`;
+
+                        if (elementBluePrint.element_type === 'preexisting') continue;
+
+                        // console.log(elementBluePrint.variables);
+
+                        let newsItemNumItem = obj.object_name === 'news-item' ? newsItemCounter : numItem;
+                        if (newsItemNumItem > newsItemNumInstances) break;
+
+                        let layerCompName: string = elementBluePrint.naming_scheme
+                            .replace('$sub_type', objElement.element_subtype || '')
+                            .replace('$item_type', itemType)
+                            .replace('$num_item', String(newsItemNumItem));
+                        
+                        console.log(`%cLayerCompName: ${layerCompName}`, 'color: pink');
+
+                        let realizedElement: Template.Element.Realized = {
+                            element_name: elementBluePrint.element_name,
+                            element_type: elementBluePrint.element_type,
+                            container_type: elementBluePrint.container_type,
+                            label_color: elementBluePrint.label_color,
+                            layerCompName,
+                            isOptional: !!objElement.is_optional,
+                        }
+
+                        stage01_elements.push(realizedElement);
+                    }
+                }
+
+                
+            }
+        }
+
+        // console.log(`stage01_elements: ${JSON.stringify(stage01_elements, null, 4)}`);
+
+        return;
+
+        // console.log(`joinedNewsItems.length: ${joinedNewsItems.length}`);
+        // console.log(`joinedNewsItems: ${JSON.stringify(joinedNewsItems[0], null, 4)}`);
+        // return;
 
         // now we know that we have at least 1 template and 1 background
 
-        const itemKeys: string[] = ['headline', 'sub_headline', 'narration'];
-        const item = allTransNewsItems[0];
-        // for (let item of newsItems) {
+        const setPresenterFiles = async () => {
+            const presenterScheme: DB.Jobs.PresenterSchemeRecord[] = 
+                await PRESENTERSCHEMES.getByName(SportsDB, edition.presenter_scheme);
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const dayName = dayNames[now.getDay()];
+            const todaysPresenterScheme: DB.Jobs.PresenterSchemeRecord | undefined = presenterScheme.find(scheme => scheme.day === dayName.toLowerCase());
+            if (!todaysPresenterScheme) throw `No presenter scheme found for day ${dayName}`;
+
+            const presenterFilePaths: DailyPresenterScheme = 
+                getPresenterSchemeFiles(
+                    subFolders.presenters, // absoluteFolderPaths.presenters, 
+                    todaysPresenterScheme, 
+                    edition.lang
+                );
             
-            /**
-             * Validate the data
-             * 
-             * There can be items with null values, so we'll skip those
-             * while all other cases will throw an error
-             */
-            let goNogo = true;
-            for (const key of itemKeys) {
-                // console.log(key);
-                if (!(key in item)) throw `Key not found in news item: ${key}`;
-                if (item[key] === null){
-                    goNogo = false;
-                    console.warn(`Ran into null key @ ${key}. Skipping.`);
-                    break;
-                }
-                if (item[key] === '' || !item[key] || item[key].length < 3){
-                    goNogo = false;
-                    console.warn(`Ran into empty key @ ${key}. Skipping.`);
-                    break;
-                }
-
+            // pathKey = 'opener' | 'closer'
+            for (const pathKey in presenterFilePaths){
+                const absoluteFilePath = presenterFilePaths[pathKey as keyof DailyPresenterScheme];
+                if (!fs.existsSync(absoluteFilePath))
+                    throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
+                files.push({
+                    absolutePath: absoluteFilePath,
+                    compositionName: mappingFuncs.presenter(pathKey),
+                    resizeAction: 'fitToComp',
+                });
             }
-            if (!goNogo) return; // continue;
+        }
 
-            // const formattedDate = getFormattedDate();
-            
-            // const templateFullPath = path.resolve(subFolders.templates, templatePath).replace(/\\/g, '/');
-            // const backgroundFullPath = path.resolve(subFolders.staticBackgrounds, backgroundPath).replace(/\\/g, '/');
-
-            // console.log(`templateFullPath: ${templateFullPath}`);
-            // console.log(`backgroundFullPath: ${backgroundFullPath}`);
-
-            // if (!fs.existsSync(backgroundFullPath)) throw `Background not found: ${backgroundPath}`;
-            // if (!fs.existsSync(templateFullPath)) throw `Template not found: ${templatePath}`;
-
-            // const exportName = `${brand_name}-${item[`headline__${$.lang}`]}-${templateName}-${formattedDate}.png`;
-            // const saveName = `${brand_name}-${item.id}-${item[`headline__${$.lang}`]}-${templateName}-${formattedDate}.psd`;
-
-            const setPresenterFiles = async () => {
-                const presenterScheme = await PRESENTERSCHEMES.getByName(DB, edition.presenter_scheme);
-                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                const dayName = dayNames[now.getDay()];
-                const todaysPresenterScheme = presenterScheme.find(scheme => scheme.day === dayName.toLowerCase());
-                if (!todaysPresenterScheme) throw `No presenter scheme found for day ${dayName}`;
-
-                const presenterFilePaths: {[key: string]: string} = 
-                    getPresenterSchemeFiles(
-                        subFolders.presenters, // absoluteFolderPaths.presenters, 
-                        todaysPresenterScheme, 
-                        edition.lang
-                    );
-                
-                for (const pathKey in presenterFilePaths){
-                    const absoluteFilePath = presenterFilePaths[pathKey];
-                    if (!fs.existsSync(absoluteFilePath))
-                        throw `absoluteFilePath path does not exist: ${absoluteFilePath}`;
-                    files.push({
-                        absolutePath: absoluteFilePath,
-                        compositionName: mappingFuncs.presenter(pathKey),
-                        resizeAction: 'fitToComp',
-                    });
-                }
-            }
-
-            // const presenterFiles = await getPresnterScheme();
-            await setPresenterFiles();
+        // const presenterFiles = await getPresnterScheme();
+        // await setPresenterFiles();
 
         /**
          * Now for every item we get the texts and files
@@ -273,16 +398,16 @@ export async function Fortuna_AE_daily_news__CORE() {
          * currently the schedule texts are not implemented
          */
         const runThroughItems = async () => {
-            const items: DB.Item.JoinedNews[] = await GENERALNEWS.getTransItemsByLang(DB, lang);
+            // const items: DB.Item.JoinedNews[] = await GENERALNEWS.getTransItemsByLang(DB, lang);
 
-            if (items.length === 0) throw `No items found for lang ${lang} in table RAPID__TRANS_NEWS`;
+            // if (items.length === 0) throw `No items found for lang ${lang} in table RAPID__TRANS_NEWS`;
 
             // console.log(`itemsLength: ${itemsLength}`);
             // const i=0;
 
             // for (const item of items) {
-            for (let i=0; i<items.length; i++) {
-                const item = items[i];
+            for (let i=0; i<newsItems.length; i++) {
+                const item = newsItems[i];
                 // console.log(`item: ${i+1}: ${JSON.stringify(item)}`);
                 // return;
                 // firstly let's generate the texts and files (relative, cause we're creating a job)
@@ -374,7 +499,7 @@ export async function Fortuna_AE_daily_news__CORE() {
                         let standings: DB.StandingAug[] =
                             // await STANDINGS.getStandingsByLang(
                             await STANDINGS.getStandingsEN(
-                                DB,
+                                SportsDB,
                                 item.sport_name!,
                                 item.standings_league_season_id!,
                                 // lang
@@ -817,6 +942,7 @@ export async function Fortuna_AE_daily_news__CORE() {
     } catch (error) {
         console.error(error);
     } finally {
-        await DB.pool.end();
+        await SportsDB.pool.end();
+        await BackofficeDB.pool.end();
     }
 }

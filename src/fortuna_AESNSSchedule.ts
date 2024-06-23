@@ -11,7 +11,6 @@ import { STANDINGS } from './functions/STANDINGS';
 import identifyRenderMachine from './functions/identifyRenderMachine';
 import { AE } from './types/AE';
 import { DB } from './types/DB';
-import { RenderMachine } from './types/RenderMachine';
 import { EDITIONS } from './functions/EDITIONS';
 import { FOLDERS } from './functions/FOLDERS';
 import { PATHS } from './functions/PATHS';
@@ -49,7 +48,7 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
         const brand_name: string = 'Fortuna';
         const product_name: CORE.Keys.Product = 'SNS_AE_Schedule';
         const lang: CORE.Keys.Lang = 'RO';
-        const renderMachine: RenderMachine = await identifyRenderMachine(DB);
+        const renderMachine: DB.RenderMachine = await identifyRenderMachine(DB);
         
         const now = new Date();
         const PORT = 9411;
@@ -70,7 +69,7 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
             if (!folderType) throw `Folder type not found: ${generalFolderKey}`;
             generalFolderPaths[generalFolderKey as 'dynamic_backgrounds' | 'logos'] = 
                 path.resolve(
-                    renderMachine[folderType.root_folder as keyof RenderMachine] as string, 
+                    renderMachine[folderType.root_folder as keyof DB.RenderMachine] as string, 
                     folderType.folder_path as string
                 ).replace(/\\/g, '/');
         }
@@ -99,7 +98,7 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
             product_path: product.product_path,
             
             dynamic_backgrounds: generalFolderPaths.dynamic_backgrounds,
-            // narration: generalFolderPaths.narration,
+            narration: '',
             logos: generalFolderPaths.logos,
         };
         $.product_path = $.product_path.replace('$brand_path/', $.brand_path);
