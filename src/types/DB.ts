@@ -1,5 +1,4 @@
 import { AE } from './AE';
-import { RenderMachine, RenderMachinePathKey } from './RenderMachine';
 
 export namespace DB {
     export type RenderMachine = {
@@ -222,7 +221,7 @@ export namespace DB {
         export type Folder = {
             name: FolderName;
             relative_path: string;
-            root_folder: RenderMachinePathKey;
+            root_folder: any;
         };
 
         export type Edition = {

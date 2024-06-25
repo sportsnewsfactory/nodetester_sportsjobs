@@ -2,6 +2,7 @@ import { HELPER } from '../classes/HELPER';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
 import { DB_NAMES } from '../config/DB_NAMES';
 import { DB } from '../types/DB';
+import { Motorsport } from '../types/Motorsport';
 
 /**
  * Since we have different types of news

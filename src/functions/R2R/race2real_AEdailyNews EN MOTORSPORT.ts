@@ -25,6 +25,12 @@ import { newsClusterLevel } from './process/newsClusterLevel';
 import { getGeneralPaths } from './components/getGeneralPaths';
 import { Paths } from '../../types/CORE/Paths';
 import { getSubfolderStrucure } from './components/getSubfolderStructure';
+import { MOTORSPORT_STANDINGS } from '../MOTORSPORT_STANDINGS';
+import { getMotorsportStandings } from './components/getStandings';
+import { populateStandingsElements } from './populateStandingsElements';
+import { Motorsport } from '../../types/Motorsport';
+import { getMotorsportSchedule } from './components/getSchedule';
+import { populateScheduleElements } from './populateScheduleElements';
 
 /**
  * Testing Race2Real AE daily edition with the new core tables
@@ -62,13 +68,8 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         const API_Endpoint = '/api/extboiler/';
 
         const now = new Date();
-        // introDate formatted as dd MMM YYYY
         const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
         const introDate = now.toLocaleDateString('en-US', options);
-
-        // console.log(introDate);
-
-        // return;
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
@@ -100,21 +101,12 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
             {whereClause: {product_name: edition.product_name}}
         );
 
-        /** 
-         * build the subfolders as an object with the absolute paths
-         * where the keys are of @type {CORE.Keys.AE.ProductSubFolder}
-         */
         const subFolders = getSubfolderStrucure(
             productSubfolders, renderMachine, edition, brand, product, generalFolderPaths
         );
         
         // console.log(`subFolders: ${JSON.stringify(subFolders, null, 4)}`);
         // return;
-
-        // Are we still going with random template?
-        const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
-        let templateFiles: string[] = templateFolderContent.filter(file => file.endsWith('.aep'));
-        if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
 
         const templateMainLayers = await BackofficeDB.SELECT(TMPTables.templateMainLayers, {whereClause: {template_name: templateName}});
         const templateClusters: Template.Record.Cluster[] = await BackofficeDB.SELECT(TMPTables.templateClusters, {whereClause: {template_name: templateName}});
@@ -148,7 +140,10 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
             await getDailyPresenterScheme(SportsDB, edition, now, subFolders.presenters);
         
         /**
-         * This will allow to address the data in a more structured way
+         * CONVERT LAYER TO SOURCES IN DB
+         * we want wherever there's a file to be inserted
+         * the formula to get to the filepath must be in the DB
+         * This is another BIG STEP
          */
         let RAW_DATA = {
             presenter: dailyPresenterFilePaths,
@@ -157,6 +152,16 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         const newsItemElements: Template.Element.DB_Blueprint[] = 
             objectElements
                 .filter(e => e.object_name === 'news-item')
+                .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
+
+        const standingsElements: Template.Element.DB_Blueprint[] = 
+            objectElements
+                .filter(e => e.object_name === 'standings-entry-MS')
+                .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
+
+        const scheduleElements: Template.Element.DB_Blueprint[] =
+            objectElements
+                .filter(e => e.object_name === 'schedule-entry-MS')
                 .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
 
         /**
@@ -172,6 +177,28 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
             files,
             trimSyncData,
         )
+
+        let leagueSeasonsIds: (string | null)[] = 
+            newsItems.map(item => item.standings_league_season_id);
+
+        const motorsportStandings: Motorsport.Standings.List[] = 
+            await getMotorsportStandings(SportsDB, leagueSeasonsIds);
+
+        const motorsportsSchedule: Motorsport.Schedule.List[] =
+            await getMotorsportSchedule(SportsDB, leagueSeasonsIds);
+
+        populateStandingsElements(
+            motorsportStandings,
+            standingsElements,
+            texts,
+        )
+
+        populateScheduleElements(
+            motorsportsSchedule,
+            scheduleElements,
+            texts
+        )
+        // return;
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);
         // console.log(`files: ${JSON.stringify(files, null, 4)}`);
@@ -287,8 +314,6 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
             }
         }
 
-        
-
         // HARDCODED-MODIFY
         const syncMainCompLayers = () => {
             // presenter-open to Intro
@@ -382,6 +407,11 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         }
 
         syncMainCompLayers();
+
+        // Are we still going with random template?
+        const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
+        let templateFiles: string[] = templateFolderContent.filter(file => file.endsWith('.aep'));
+        if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
 
         // HARDCODED-MODIFY
         // set workarea
