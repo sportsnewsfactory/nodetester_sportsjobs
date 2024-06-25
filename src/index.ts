@@ -30,7 +30,8 @@ import { getExpectedVariables__AE } from './getExpectedVariables__AE';
 import { getBackgrounds__AE } from './getBackgrounds__AE';
 import { goNoGo } from './getGoNoGo';
 import { Fortuna_AE_daily_news__CORE } from './fortuna_AEdailyNews';
-import { Race2Real_AE_daily_news } from './race2real_AEdailyNews';
+import { Race2Real_AE_daily_news } from './functions/R2R/race2real_AEdailyNews HI TRANS';
+import { Race2Real_AE_daily_news__MOTORSPORT_EN } from './functions/R2R/race2real_AEdailyNews EN MOTORSPORT';
 
 const tempMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -454,4 +455,4 @@ async function Fortuna_SNS_AE_Schedule__CORE() {
 // testCalendarSNSAE();
 // Fortuna_SNS_AE_Ranking__CORE();
 
-Race2Real_AE_daily_news();
+Race2Real_AE_daily_news__MOTORSPORT_EN();

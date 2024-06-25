@@ -1,3 +1,5 @@
+import { AE } from "../AE";
+
 export namespace Template {
     export namespace Action {
         export type Type = 
@@ -8,19 +10,23 @@ export namespace Template {
         | 'marker'
 
         export type Method = 
-        | 'fitToComp'
-        | 'fitToMedia'
-        | 'toCompHeight'
-        | 'toCompWidth'
-        | 'trimByAudio'
-        | 'trimByVideo'
-        | 'trimInToOut'
-        | 'trimOutToIn'
-        | 'trimWorkareaToLayerOut'
-        | 'syncHeadTail'
-        | 'syncMarkerToOutPoint'
-        | 'syncToTime'
-        | 'markersSync'
+        | AE.Method.Trim 
+        | AE.Method.Sync 
+        | AE.Method.Marker 
+        | AE.Method.Resize
+        // | 'fitToComp'
+        // | 'fitToMedia'
+        // | 'toCompHeight'
+        // | 'toCompWidth'
+        // | 'trimByAudio'
+        // | 'trimByVideo'
+        // | 'trimInToOut'
+        // | 'trimOutToIn'
+        // | 'trimWorkareaToLayerOut'
+        // | 'syncHeadTail'
+        // | 'syncMarkerToOutPoint'
+        // | 'syncToTime'
+        // | 'markersSync'
     }
     
     export type Action = {
@@ -44,6 +50,20 @@ export namespace Template {
             num_object_instances: number;
             variable_num_objects: boolean;
             is_optional: boolean;
+        }
+    }
+
+    export namespace Cluster {
+        export type Action = {
+            cluster_name: string;
+            action_type: Action.Type;
+            method: Action.Method;
+            action_order: number;
+            target_element_a: string | null;
+            target_element_b: string | null;
+            variable_element_instances: boolean;
+            pad_in: number | null;
+            pad_out: number | null;
         }
     }
 
@@ -94,7 +114,9 @@ export namespace Template {
 
         export type Action = {
             element_name: string;
-            actin_type: Action.Type
+            action_type: Action.Type;
+            method: Action.Method;
+            action_order: number;
         }
     }
 }

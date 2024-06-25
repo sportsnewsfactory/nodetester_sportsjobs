@@ -6,7 +6,9 @@ import { DB } from "../../types/DB";
 export async function getBrandEditionProduct(
     DB: MYSQL_DB, 
     brand_name: string, 
-    product_name: string
+    product_name: string,
+    lang: string,
+    sportName: DB.SportName
 ): Promise<{brand: CORE.Brand, edition: CORE.Edition, product: CORE.Product}>{
     
     const brands = await DB.SELECT<CORE.Brand>(coreTables.brands);
@@ -16,9 +18,11 @@ export async function getBrandEditionProduct(
     const editions: CORE.Edition[] = await DB.SELECT<CORE.Edition>(coreTables.editions);
     const edition: CORE.Edition | undefined = editions.find(
         edition => edition.brand_name === brand_name && 
-        edition.product_name === product_name
+        edition.product_name === product_name &&
+        edition.lang === lang &&
+        edition.sport === sportName
     );
-        if (!edition) throw `Edition or product name in edition row not not found: ${brand_name} ${product_name}`;
+        if (!edition) throw `Brand, product, language and sport combination not found in config.CORE_L3_editions: ${brand_name} ${product_name} ${lang} ${sportName}`;
 
     const products = await DB.SELECT<CORE.Product>(
         coreTables.products, 
