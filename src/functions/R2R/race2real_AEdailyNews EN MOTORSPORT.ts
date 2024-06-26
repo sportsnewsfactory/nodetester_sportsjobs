@@ -68,8 +68,11 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         const API_Endpoint = '/api/extboiler/';
 
         const now = new Date();
+        // target date is tomorrow if after 17:00
+        const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
+
         const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
-        const introDate = now.toLocaleDateString('en-US', options);
+        const introDate = targetDate.toLocaleDateString('en-US', options);
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
@@ -137,7 +140,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
         // return;
         const dailyPresenterFilePaths: DailyPresenterScheme = 
-            await getDailyPresenterScheme(SportsDB, edition, now, subFolders.presenters);
+            await getDailyPresenterScheme(SportsDB, edition, targetDate, subFolders.presenters);
         
         /**
          * CONVERT LAYER TO SOURCES IN DB
@@ -320,7 +323,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
             trimSyncData.push({
                 method: 'syncHeadTail',
                 padding: 0,
-                layerAName: 'presenter-open',
+                layerAName: 'presenter-open-container',
                 layerBName: 'intro',
             });
 
@@ -329,7 +332,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
                 method: 'syncHeadTail',
                 padding: 0,
                 layerAName: 'news-cluster1',
-                layerBName: 'presenter-open',
+                layerBName: 'presenter-open-container',
             });
 
             // news-cluster2 to news-cluster1
@@ -364,7 +367,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
                 ];
 
                 const syncToLayers = [
-                    'presenter-open',
+                    'presenter-open-container',
                     'news-cluster1',
                     'news-cluster2',
                 ]
@@ -389,7 +392,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
                     method: 'syncMarkerToOutPoint',
                     padding: 0,
                     layerAName: 'soundtrack-outro',
-                    layerBName: 'presenter-close',
+                    layerBName: 'presenter-close-container',
                 }
                 trimSyncData.push(syncMarker);
 

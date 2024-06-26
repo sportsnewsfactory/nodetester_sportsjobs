@@ -34,8 +34,12 @@ export function populateStandingsElements(
             const text: AE.Json.TextImport = {
                 text: header,
                 textLayerName,
-                recursiveInsertion: false,
+                recursiveInsertion: true,
             };
+
+            // console.warn(`pushing header text: ${JSON.stringify(text)}`);
+
+            texts.push(text);
 
             for (let entry of standingsItem.entries){
                 /*
@@ -84,7 +88,7 @@ export function populateStandingsElements(
                         textLayerName,
                         recursiveInsertion: false,
                     };
-                    console.warn(`pushing standings texts`);
+                    // console.warn(`pushing standings texts`);
                     texts.push(text);
                 // }
                 }
