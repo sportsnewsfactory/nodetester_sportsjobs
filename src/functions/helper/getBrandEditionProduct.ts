@@ -8,7 +8,7 @@ export async function getBrandEditionProduct(
     brand_name: string, 
     product_name: string,
     lang: string,
-    sportName: DB.SportName
+    sportName: DB.SportName | 'Mixed'
 ): Promise<{brand: CORE.Brand, edition: CORE.Edition, product: CORE.Product}>{
     
     const brands = await DB.SELECT<CORE.Brand>(coreTables.brands);

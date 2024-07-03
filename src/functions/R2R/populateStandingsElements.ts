@@ -8,6 +8,8 @@ export function populateStandingsElements(
     texts: AE.Json.TextImport[],
 ){
     const funcName = 'populateStnadingsElements';
+    const now = new Date();
+    const thisYear = now.getFullYear();
 
     const hardCodedHeaderElement: Template.Element.DB_Blueprint = {
         label_color: 'Red',
@@ -27,7 +29,7 @@ export function populateStandingsElements(
             const numItem = i+1;
             const standingsItem: Motorsport.Standings.List = standings[i];
             
-            const header = standingsItem.header || 'HEADER';
+            const header = (standingsItem.header || 'HEADER').replace(` ${thisYear}`,'');
             const textLayerName = hardCodedHeaderElement.naming_scheme
                 .replace('$num_item', String(numItem));
 

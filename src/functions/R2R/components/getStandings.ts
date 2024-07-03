@@ -9,7 +9,7 @@ export async function getMotorsportStandings(
     try {
         const standings: Motorsport.Standings.List[] = [];
 
-        for (let i=1; i<=leagueSeasonsIds.length; i++){
+        for (let i=0; i<leagueSeasonsIds.length; i++){
             const leagueSeasonId = leagueSeasonsIds[i];
             if (leagueSeasonId === null) { standings.push({entries: []}); continue }
             const leagueStandings = 

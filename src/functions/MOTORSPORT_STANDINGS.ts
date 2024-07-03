@@ -28,7 +28,7 @@ export const MOTORSPORT_STANDINGS = {
                 LIMIT 10;
             `;
 
-            // console.log(`sql: ${sql}`);
+            // console.warn(`sql: ${sql}`);
 
             const itemsResult = await DB.pool.execute(sql);
             const entries = itemsResult[0] as Motorsport.Standings.Entry[];

@@ -18,6 +18,7 @@ export namespace Motorsport {
             league_season_id: string;
             league_season_name: string;
             slug: string;
+            description: string;
             start_date_seconds: number;
             start_date_timestamp: string;
         }

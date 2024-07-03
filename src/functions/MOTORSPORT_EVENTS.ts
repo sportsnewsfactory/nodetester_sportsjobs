@@ -21,6 +21,7 @@ export const MOTORSPORT_EVENTS = {
                 re.start_date_timestamp, 
                 re.league_season_id, 
                 re.slug,
+                re.description,
                 ls.name as league_season_name
                 FROM ${re} as re
                 INNER JOIN ${ls} as ls
@@ -30,6 +31,8 @@ export const MOTORSPORT_EVENTS = {
                 ORDER BY re.start_date_seconds
                 LIMIT 5;
             `;
+
+            // console.warn(`sql: ${sql}`);
 
             const itemsResult = await DB.pool.execute(sql);
             const events = itemsResult[0] as Motorsport.Schedule.Event[];

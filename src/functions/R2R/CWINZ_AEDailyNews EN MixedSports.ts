@@ -33,9 +33,9 @@ import { getMotorsportSchedule } from './components/getSchedule';
 import { populateScheduleElements } from './populateScheduleElements';
 
 /**
- * Testing Race2Real AE daily edition with the new core tables
+ * Testing CWINZ AE daily edition with the new core tables
  */
-export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {    
+export async function CWINZ_AE_daily_news__MIXED_EN() {    
     const SportsDB = new MYSQL_DB();
     SportsDB.createPool('SPORTS');
 
@@ -55,11 +55,11 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
          * besides these, we'll try and make all the data flow
          * from the database.
          */
-        const brand_name: string = 'Race2Real';
+        const brand_name: string = 'CWINZ';
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
         const lang: CORE.Keys.Lang = 'EN';
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
-        const sportName: DB.SportName = 'Motorsport';
+        const sportName: DB.SportName | 'Mixed' = 'Mixed';
 
         // WILL CHANGE TO motorsport1
         const templateName: string = 'mixed-sports1';

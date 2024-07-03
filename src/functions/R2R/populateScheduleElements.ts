@@ -7,6 +7,9 @@ export function populateScheduleElements(
     scheduleElements: Template.Element.DB_Blueprint[],
     texts: AE.Json.TextImport[],
 ){
+    const now = new Date();
+    const thisYear = now.getFullYear();
+
     const funcName = 'populateStandingsElements';
     try {
         const elementNames = scheduleElements.map(
@@ -38,14 +41,14 @@ export function populateScheduleElements(
                 */
                 
                 const eventDate = new Date(Number(event.start_date_seconds)*1000);
-                // let's format date as dd MMM YYYY
-                const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
+                // let's format date as dd MMM
+                const options = { day: '2-digit', month: 'short' } as Intl.DateTimeFormatOptions;
                 const date = eventDate.toLocaleDateString('en-US', options);
                 // let's format time as HH:MM
                 const time = eventDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
 
                 const elementValues = {
-                    'schedule-entry-MS-event-name': event.slug,
+                    'schedule-entry-MS-event-name': event.description,
                     // Let's show date in short format
                     'schedule-entry-MS-event-date': date,
                     'schedule-entry-MS-event-time': time,
@@ -57,7 +60,7 @@ export function populateScheduleElements(
                     // console.log(`key: ${key}`);
                     
                     //@ts-ignore
-                    const value = elementValues[key];
+                    const value = elementValues[key].replace(` ${thisYear}`,'');
                     const element = scheduleElements.find(
                         (element) => element.element_name === key
                     );
@@ -65,7 +68,7 @@ export function populateScheduleElements(
 
                     const textLayerName = element.naming_scheme
                         .replace('$num_item', String(numItem))
-                        .replace('$num_entry', String(numEntry))
+                        .replace('$num_entry', String(numEntry))  
                     
                     // console.warn(`textLayerName: ${textLayerName} value: ${value}`);
                     

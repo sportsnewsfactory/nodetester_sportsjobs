@@ -10,7 +10,7 @@ export async function getMotorsportSchedule(
     try {
         const schedule: Motorsport.Schedule.List[] = [];
 
-        for (let i=1; i<=leagueSeasonsIds.length; i++){
+        for (let i=0; i<leagueSeasonsIds.length; i++){
             const leagueSeasonId = leagueSeasonsIds[i];
             if (leagueSeasonId === null) { schedule.push({events: []}); continue }
             const leagueEvents: Motorsport.Schedule.List = 
