@@ -27,7 +27,7 @@ import { Paths } from '../../types/CORE/Paths';
 import { getSubfolderStrucure } from './components/getSubfolderStructure';
 import { MOTORSPORT_STANDINGS } from '../MOTORSPORT_STANDINGS';
 import { getMotorsportStandings } from './components/getStandings';
-import { populateStandingsElements } from './populateStandingsElements';
+import { populateStandingsElements } from './populateStandingsElementsR2RObsolete';
 import { Motorsport } from '../../types/Motorsport';
 import { getMotorsportSchedule } from './components/getSchedule';
 import { populateScheduleElements } from './populateScheduleElements';

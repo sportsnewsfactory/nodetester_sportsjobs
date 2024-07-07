@@ -25,7 +25,6 @@ import { newsClusterLevel } from './process/newsClusterLevel';
 import { getGeneralPaths } from './components/getGeneralPaths';
 import { Paths } from '../../types/CORE/Paths';
 import { getSubfolderStrucure } from './components/getSubfolderStructure';
-import { MOTORSPORT_STANDINGS } from '../MOTORSPORT_STANDINGS';
 import { getMotorsportStandings } from './components/getStandings';
 import { populateStandingsElements } from './populateStandingsElements';
 import { Motorsport } from '../../types/Motorsport';
@@ -159,7 +158,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
 
         const standingsElements: Template.Element.DB_Blueprint[] = 
             objectElements
-                .filter(e => e.object_name === 'standings-entry-MS')
+                .filter(e => e.object_name === 'standings-entry')
                 .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
 
         const scheduleElements: Template.Element.DB_Blueprint[] =

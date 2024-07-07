@@ -90,7 +90,7 @@ export function getPresenterSchemeFiles(
         // and probably only one is an opener
         // so we start with the opener
         let opener = presenterFilesByDay.find(file => file.toLowerCase().includes(`_opener`));
-        if (!opener) throw `No opener found for scheme ${JSON.stringify(scheme)}`;
+        if (!opener) throw `No opener found for scheme ${JSON.stringify(scheme)} in folder ${presenterFolderPath}`;
         outputPaths.open = `${presenterFolderPath}${opener}`;
 
         // now let's get the closer
@@ -174,7 +174,7 @@ export async function getDailyPresenterScheme(
         // and probably only one is an opener
         // so we start with the opener
         let opener = presenterFilesByDay.find(file => file.toLowerCase().includes(`_opener`));
-        if (!opener) throw `No opener found for scheme ${JSON.stringify(scheme)}`;
+        if (!opener) throw `No opener found for scheme ${JSON.stringify(scheme)} in folder ${presenterFolderPath}`;
         dailyPresenterScheme.open = `${presenterFolderPath}${opener}`;
 
         // now let's get the closer
