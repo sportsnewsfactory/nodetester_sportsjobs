@@ -29,7 +29,7 @@ export function populateStandingsElements(
             const numItem = i+1;
             const standingsItem: Motorsport.Standings.List = standings[i];
             
-            const header = (standingsItem.header || 'HEADER').replace(` ${thisYear}`,'');
+            const header = (standingsItem.header || '').replace(` ${thisYear}`,'');
             const textLayerName = hardCodedHeaderElement.naming_scheme
                 .replace('$num_item', String(numItem));
 

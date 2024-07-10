@@ -124,6 +124,11 @@ export function newsClusterLevel(
                             .replace('$item_type', 'news-cluster')
                             .replace('$num_item', String(newsCluster.cluster_index));
 
+                        /**
+                         * in the case of cluster 1 we target markers 1 and 2
+                         * in the case of cluster 2 we target marker 4
+                         * So really it's all the markers with a pop at the end
+                         */
                         let targetLayerBNames: string[] = [];
                         for (let j=1+previousNewsItems; j<=numNewsItems+previousNewsItems; j++){
                             const targetElementBLayerName = targetElementB.naming_scheme
@@ -132,13 +137,22 @@ export function newsClusterLevel(
 
                             targetLayerBNames.push(targetElementBLayerName);
                         }
+                        targetLayerBNames.pop();
                         
+                        /**
+                         * So if element marker_comp has a naming scheme of $item_type$num_item-narration
+                         * it will now be news-cluster1-marker-comp.
+                         * Target element B is narration and has the naming scheme of $item_type$num_item-narration
+                         * so it will be news-item1-narration
+                         */
                         const marker: AE.Json.TS.SyncMarker = {
                             method: clusterAction.method as AE.Method.Marker,
                             padding: clusterAction.pad_in || 0,
                             layerAName: layerAName,
                             layerBName: targetLayerBNames,
                         };
+
+                        // console.log(`%cmarker: ${JSON.stringify(marker, null, 4)}`,'color: yellow')
 
                         trimSyncData.push(marker);
 

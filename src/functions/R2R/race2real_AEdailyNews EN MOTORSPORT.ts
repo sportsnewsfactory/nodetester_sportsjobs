@@ -7,7 +7,7 @@ import fs from 'fs';
 import axios from 'axios';
 
 import { MYSQL_DB } from '../../classes/MYSQL_DB';
-import { GENERALNEWS } from '../GENERALNEWS';
+import { GENERALNEWS, SPORTNEWS } from '../GENERALNEWS';
 import identifyRenderMachine from '../identifyRenderMachine';
 import { AE } from '../../types/AE';
 import { DB } from '../../types/DB';
@@ -135,7 +135,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
          * contain all of the raw data we need
          */
         const newsItems: DB.Item.JoinedNews[] = 
-            await GENERALNEWS.getTransItemsByLang(SportsDB, lang);
+            await SPORTNEWS.getTransItemsByLang(SportsDB, sportName, lang);
 
         // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
         // return;

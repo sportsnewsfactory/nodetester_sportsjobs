@@ -50,7 +50,7 @@ export function populateStandingsElements(
                     description: 'Header for standings',
                 };
                 
-                const header = (standingsList.header || 'HEADER').replace(` ${thisYear}`,'');
+                const header = (standingsList.header || '').replace(` ${thisYear}`,'');
                 const textLayerName = hardCodedHeaderElement.naming_scheme
                     .replace('$num_item', String(numItem));
 
