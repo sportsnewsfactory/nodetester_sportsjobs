@@ -71,7 +71,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         // target date is tomorrow if after 17:00
         const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
 
-        const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
+        const options = { month: 'long', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions;
         const introDate = targetDate.toLocaleDateString('en-US', options);
 
         let texts: AE.Json.TextImport[] = [];
@@ -95,6 +95,19 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         // return;
         const generalFolderPaths: Paths.GeneralFolders =
             await getGeneralPaths(renderMachine, SportsDB);
+
+        // console.log(`generalFolderPaths: ${JSON.stringify(generalFolderPaths, null, 4)}`);
+        // return;
+        
+        /*
+
+        generalFolderPaths: {
+            "dynamic_backgrounds": "G:/My Drive/Sports/S_Studio/S_S_Backgrounds/S_S_Backgrounds_$item_specific_sport_name",
+            "narration": "G:/My Drive/Sports/S_Studio/S_S_Narration/S_S_N_",
+            "logos": "G:/My Drive/Sports/S_Studio/S_S_Logos/S_S_L_$item_specific_sport_name"
+        }
+
+        */
 
         /** 
          * get the buleprint of the subfolder structure for the given product.
@@ -478,12 +491,15 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         };
 
         for (let text of payload.texts) {
-            text.text = typeof text.text === 'string' ? text.text : String(text.text);
-            // Use convertedText here
+            text.text = typeof text.text === 'string' ? text.text.trim() : String(text.text).trim();
+            // text.text = text.text
+            //     .trim()
+            //     .replace(/"/g, '***dquote***')
+            //     .replace(/'/g, '***squote***');
         }
 
         const jsoned = JSON.stringify(payload).replace(/\\\\/g, '/');
-        // console.warn(jsoned);
+        // fs.writeFileSync(`C:/Users/NF5/Documents/programming/sports/jobstest/src/types/CORE/payloads/payload_${edition.product_name}.json`, jsoned);
 
         // return;
 

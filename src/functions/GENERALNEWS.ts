@@ -62,25 +62,33 @@ export const SPORTNEWS = {
     ): Promise<DB.Item.JoinedNews[]> {
         // console.log(`getGeneralNewsItems`);
         const funcName = `SPORTNEWS.getTransItemsByLang`;
+        const expectedNumberOfNewsItems = 5;
 
         try {
             const sql = `
-                SELECT rn.id, tr.file_name, tr.headline, tr.sub_headline, tr.narration, rn.sport_id, sports.name as sport_name, rn.background, rn.logo, rn.show_standings, rn.show_next_matches, rn.standings_league_season_id, rn.schedule_league_season_id, tr.lang
+                SELECT rn.id, tr.file_name, tr.headline, tr.sub_headline, tr.narration, rn.background, rn.logo, rn.show_standings, rn.show_next_matches, rn.standings_league_season_id, rn.schedule_league_season_id, tr.lang
                 FROM ${sportName}.RAPID__NEWS as rn
                 INNER JOIN ${sportName}.RAPID__TRANS_NEWS as tr
                 ON rn.id = tr.item_id
-                INNER JOIN config.sports as sports
-                ON rn.sport_id = sports.id
                 WHERE tr.lang = '${lang}';          
             `;
 
             const itemsResult = await DB.pool.execute(sql);
             const items = itemsResult[0] as DB.Item.JoinedNews[];
             const sortedSliced = items
+                .map(item => {
+                    return {
+                        ...item,
+                        headline: this.encryptText(item.headline),
+                        sub_headline: this.encryptText(item.sub_headline),
+                        sport_name: sportName
+                    };
+                })
                 .sort((a, b) => Number(a.id) - Number(b.id))
-                .slice(0, 5);
+                .slice(0, expectedNumberOfNewsItems);
+            
+            // throw `firstsorted: ${JSON.stringify(sortedSliced[0], null, 4)}`;
 
-            const expectedNumberOfNewsItems = 5;
             if (sortedSliced.length !== expectedNumberOfNewsItems) throw `Wrong number of newsItems: ${sortedSliced.length}`;
 
             return sortedSliced;
@@ -88,4 +96,11 @@ export const SPORTNEWS = {
             throw `${funcName} failed with: ${e}`;
         }
     },
+    encryptText: (text: string): string => {
+        return text
+            .replace(/"/g, '__D_QUOTE__')
+            .replace(/'/g, "__QUOTE__");
+    }
 }
+
+
