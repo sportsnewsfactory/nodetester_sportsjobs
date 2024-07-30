@@ -4,9 +4,6 @@ import { Standings } from "../../types/CORE/Standings";
 import { Template } from "../../types/CORE/Template";
 
 /**
- * This version can be used for all sports
- * including motorsport
- * 
  * Standings objects are sorted by position
  */
 export function populateStandingsElements(
@@ -38,7 +35,8 @@ export function populateStandingsElements(
         for (let i=0; i<standingsLists.length; i++){
             const numItem = i+1;
             const standingsList: Standings.List = standingsLists[i];
-            
+            if (standingsList.entries.length === 0) continue;
+
             const populateHeaderText = () => {
                 const hardCodedHeaderElement: Template.Element.DB_Blueprint = {
                     label_color: 'Red',

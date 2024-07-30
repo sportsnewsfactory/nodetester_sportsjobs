@@ -16,6 +16,7 @@ export const DB_NAMES: { [key in DB_NAME]: DB_NAME } = {
 export const TABLE_NAMES: { [key in DB_NAME]: { [key: string]: string } } = {
     config: {
         admins: `${DB_NAMES.config}.admins`,
+        sports: `${DB_NAMES.config}.CORE_L1_sports`,
     },
     Football: {
         newsItemsRaw: `${DB_NAMES.Football}.NEWS_ITEMS_RAW`,

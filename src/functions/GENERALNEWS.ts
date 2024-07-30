@@ -1,7 +1,7 @@
 import { HELPER } from '../classes/HELPER';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
 import { formatDateToSQLTimestamp } from '../classes/formatDateToSQLTimestamp';
-import { DB_NAMES } from '../config/DB_NAMES';
+import { DB_NAMES, TABLE_NAMES } from '../config/DB_NAMES';
 import { DB } from '../types/DB';
 import { MYSQL } from '../types/MYSQL';
 
@@ -95,6 +95,51 @@ export const SPORTNEWS = {
         } catch (e) {
             throw `${funcName} failed with: ${e}`;
         }
+    },
+    async getTransItemsByLangAndSport(
+        DB: MYSQL_DB,
+        lang: string
+    ): Promise<{[key in DB.SportName]: DB.Item.JoinedNews[]}> {
+        // console.log(`getGeneralNewsItems`);
+        const funcName = `NEWS.getTransItemsByLangAndSport`;
+
+        let sports = await DB.SELECT<DB.Sport>(TABLE_NAMES.config.sports)
+        let filteredSports = sports
+            .filter(sport => 
+                sport.name !== 'General' as DB.SportName
+                && sport.name !== 'Mixed' as DB.SportName
+                && sport.name !== 'Soccer' as DB.SportName
+                && sport.name !== 'Motorsport' as DB.SportName
+            );
+        
+        const items = {} as {[key in DB.SportName]: DB.Item.JoinedNews[]};
+
+        for (const sport of filteredSports){
+            try {
+                const sql = `
+                    SELECT rn.id, tr.file_name, tr.headline, tr.sub_headline, tr.narration, rn.background, rn.logo, rn.show_standings, rn.show_next_matches, rn.standings_league_season_id, rn.schedule_league_season_id, tr.lang
+                    FROM ${sport.name}.RAPID__NEWS as rn
+                    INNER JOIN ${sport.name}.RAPID__TRANS_NEWS as tr
+                    ON rn.id = tr.item_id
+                    WHERE tr.lang = '${lang}' AND rn.when_created > DATE_SUB(NOW(), INTERVAL 1 DAY);       
+                `;
+
+                const itemsResult = await DB.pool.execute(sql);
+                const withSportName = (itemsResult[0] as DB.Item.JoinedNews[]).map(item => {
+                    return {
+                        ...item,
+                        headline: this.encryptText(item.headline),
+                        sub_headline: this.encryptText(item.sub_headline),
+                        sport_name: sport.name
+                    };
+                });
+                
+                items[sport.name] = withSportName;
+            } catch (e) {
+                throw `${funcName} failed with: ${e}`;
+            }
+        }
+        return items;
     },
     encryptText: (text: string): string => {
         return text

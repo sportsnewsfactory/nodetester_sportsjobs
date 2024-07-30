@@ -1,6 +1,7 @@
 import { HELPER } from '../classes/HELPER';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
 import { DB_NAMES } from '../config/DB_NAMES';
+import { Standings } from '../types/CORE/Standings';
 import { DB } from '../types/DB';
 import { Motorsport } from '../types/Motorsport';
 
@@ -78,7 +79,7 @@ export const STANDINGS = {
         DB: MYSQL_DB,
         sportName: DB.SportName,
         leagueSeasonId: string,
-    ): Promise<DB.StandingAug[]> {
+    ): Promise<Standings.Entry[]> {
         // console.log(`getStandingsEN`);
         const funcName = `NEWS.getStandingsEN`;
 
@@ -88,7 +89,7 @@ export const STANDINGS = {
             const ls = `${sportName}.CORE__LEAGUESEASONS`;
 
             const sql = `
-                SELECT rs.position, rs.wins, rs.losses, rs.league_season_id, ct.name_code as team_name, ls.name as league_season_name
+                SELECT rs.*, ct.name_code as team_name, ls.name as league_season_name
                 FROM ${rs} as rs
                 INNER JOIN ${ct} as ct
                 ON rs.team_id = ct.id
@@ -100,8 +101,13 @@ export const STANDINGS = {
             // console.log(`sql: ${sql}`);
 
             const itemsResult = await DB.pool.execute(sql);
-            const items = itemsResult[0] as DB.StandingAug[];
-            items.sort((a, b) => Number(a.position) - Number(b.position));
+            let rawItems = itemsResult[0] as Standings.Entry[];
+            const items = rawItems.map((item) => {
+                if ('id' in item) delete item.id;
+                if ('team_id' in item) delete item.team_id;
+                if ('league_season_id' in item) delete item.league_season_id;
+                return item;
+            }).sort((a, b) => Number(a.position) - Number(b.position));
             return items;
         } catch (e) {
             throw `${funcName} failed with: ${e}`;

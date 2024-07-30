@@ -7,7 +7,7 @@ import fs from 'fs';
 import axios from 'axios';
 
 import { MYSQL_DB } from '../../classes/MYSQL_DB';
-import { GENERALNEWS } from '../GENERALNEWS';
+import { GENERALNEWS, SPORTNEWS } from '../GENERALNEWS';
 import identifyRenderMachine from '../identifyRenderMachine';
 import { AE } from '../../types/AE';
 import { DB } from '../../types/DB';
@@ -30,6 +30,10 @@ import { populateStandingsElements } from './populateStandingsElements';
 import { Motorsport } from '../../types/Motorsport';
 import { getMotorsportSchedule } from './components/getSchedule';
 import { populateScheduleElements } from './populateScheduleElements';
+import { STANDINGS } from '../STANDINGS';
+import { Standings } from '../../types/CORE/Standings';
+import { Schedule } from '../../types/CORE/Schedule';
+import { NEXTMATCHES } from '../NEXTMATCHES';
 
 /**
  * Testing CWINZ AE daily edition with the new core tables
@@ -129,12 +133,49 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          * We'll start with getting our raw data
          * then we will manipulate the data to fit the actions scheme
          * and then we'll export a sample json file.
-         * 
+         */
+        const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
+            await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, lang);
+
+        /**
+         * Now we need a selection mechanism.
+         * If there is 1 of each sport we take the first item of each.
+         * So the mechanism is to grab the first item of each and then,
+         * if we haven't reached 5 items, we grab the second item of each
+         * and so on.
+         */
+        const selectMixedNews = () => {
+            let mixedNewsItems: DB.Item.JoinedNews[] = [];
+            let i = 0;
+            let keys = Object.keys(allNewsItems) as DB.SportName[];
+            
+            /**
+             * Because we're running a while loop
+             * let's first make sure that there are at least 5 items
+             * in all of the arrays together.
+             */
+            const totalItems: number = keys.reduce((acc, key) => acc + allNewsItems[key].length, 0);
+            if (totalItems < 5) throw `Not enough news items to mix. Total items: ${totalItems}`;
+
+            while (mixedNewsItems.length < 5){
+                let key = keys[i];
+                let newsItems = allNewsItems[key];
+                if (newsItems.length > 0){
+                    mixedNewsItems.push(newsItems.shift() as DB.Item.JoinedNews);
+                }
+                i++;
+                if (i === keys.length) i = 0;
+            }
+            return mixedNewsItems;
+        }
+
+        /**
          * @param newsItems and @param presenterFiles
          * contain all of the raw data we need
          */
-        const newsItems: DB.Item.JoinedNews[] = 
-            await GENERALNEWS.getTransItemsByLang(SportsDB, lang);
+        const newsItems: DB.Item.JoinedNews[] = selectMixedNews();
+        // console.log(`newsItems: ${JSON.stringify(newsItems, null, 4)}`);
+        // return;
 
         // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
         // return;
@@ -180,47 +221,61 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             trimSyncData,
         )
 
-        let leagueSeasonsIds: (string | null)[] = 
-            newsItems.map((item, index) => {
-                // console.warn(`item ${index}: ${item.headline} show standings: ${!!item.show_standings} show next matches: ${!!item.show_next_matches}`);
-                if (!!item.show_next_matches && !!item.show_standings) return item.schedule_league_season_id;
-                else return null;
-            });
+        let standingsLeagueSeasonIds: (string | null)[] = [];
+        let scheduleLeagueSeasonIds: (string | null)[] = [];
+        for (let i=0; i<newsItems.length; i++){
+            if (!!newsItems[i].show_standings){
+                standingsLeagueSeasonIds.push(newsItems[i].standings_league_season_id);
+            }
+            if (!!newsItems[i].show_next_matches){
+                scheduleLeagueSeasonIds.push(newsItems[i].schedule_league_season_id);
+            }
+        }
 
         // console.log(`leagueSeasonsIds: ${JSON.stringify(leagueSeasonsIds, null, 4)}`);
         // return;
 
-        const motorsportStandings: Motorsport.Standings.List[] = 
-            await getMotorsportStandings(SportsDB, leagueSeasonsIds);
+        let standingsLists: Standings.List[] = [];
+        let scheduleLists: Schedule.List[] = [];
 
-        const motorsportsSchedule: Motorsport.Schedule.List[] =
-            await getMotorsportSchedule(SportsDB, leagueSeasonsIds);
+        for (let i=0; i<newsItems.length; i++){
+            const newsItem: DB.Item.JoinedNews = newsItems[i];
 
-        // console.log(`Standings list length: ${motorsportStandings.length}`);
-        // console.log(`Schedule list length: ${motorsportsSchedule.length}`);
+            if (standingsLeagueSeasonIds[i] === null){
+                standingsLists.push({entries: [], header: ''});
+            } else {
+                const itemStandings: Standings.Entry[] = await STANDINGS.getStandingsEN(SportsDB, newsItem.sport_name, standingsLeagueSeasonIds[i] as string);
+                if (itemStandings.length === 0){
+                    standingsLists.push({entries: [], header: ''});
+                } else {
+                    standingsLists.push({entries: itemStandings, header: itemStandings[0].league_name});
+                }
+            }
 
-        // return;
+            if (scheduleLeagueSeasonIds[i] === null){
+                scheduleLists.push({entries: [], header: ''});
+            } else {
+                const schedule: DB.NextMatch_NewFormat[] = await NEXTMATCHES.getBySportNameAndLeagueSeasonId(SportsDB, newsItem.sport_name, scheduleLeagueSeasonIds[i] as string);
+                if (schedule.length === 0){
+                    scheduleLists.push({entries: [], header: ''});
+                } else {
+                    scheduleLists.push({entries: schedule, header: schedule[0].league_season_id});
+                }
+            }
 
-        // for (let i=0; i<5; i++){
-        //     const standingsList: Motorsport.Standings.List = motorsportStandings[i];
-        //     const scheduleList: Motorsport.Schedule.List = motorsportsSchedule[i];
-        //     console.log(`%cstandings entries for list #${i+1}: ${standingsList.entries.length}`, `color: orange`);
-        //     console.log(`%cschedule entries for list #${i+1}: ${scheduleList.events.length}`, `color: yellow`);
-        // }
-
-        // return;
+        }
 
         populateStandingsElements(
-            motorsportStandings,
+            standingsLists,
             standingsElements,
             texts,
-        )
+        );
 
-        populateScheduleElements(
-            motorsportsSchedule,
-            scheduleElements,
-            texts
-        )
+        // populateScheduleElements(
+        //     scheduleLists,
+        //     scheduleElements,
+        //     texts
+        // );
         // return;
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);

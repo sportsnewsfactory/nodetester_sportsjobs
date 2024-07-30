@@ -131,8 +131,14 @@ export function populateNewsElements(
                                     break;
                                 }
                                 case 'narration': {
+                                    let targetDate = new Date();
+                                    if (targetDate.getHours() > 20) {
+                                        // If it's past 8pm, targetDate becomes tomorrow
+                                        targetDate.setDate(targetDate.getDate() + 1);
+                                    }
+                                    const dateFolderName = targetDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
                                     //@ts-ignore
-                                    const folderPath = `${generalFolderPaths.narration}Mixed/${newsItem.lang}`;
+                                    const folderPath = `${generalFolderPaths.narration}${newsItem.sport_name}/${newsItem.lang}/${dateFolderName}`;
                                     const filePath = `${folderPath}/${value}`;
                                     if (!fs.existsSync(filePath))
                                         throw `File path does not exist: ${filePath}`;
