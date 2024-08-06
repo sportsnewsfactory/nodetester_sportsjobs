@@ -37,7 +37,8 @@ export namespace DB {
         | 'Tennis'
         | 'Motorsport'
         | 'Cricket'
-        | 'Baseball';
+        | 'Baseball'
+        | 'Misc'
 
     export type Sport = {
         id: string; // needs converting to number

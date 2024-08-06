@@ -34,6 +34,12 @@ import { STANDINGS } from '../STANDINGS';
 import { Standings } from '../../types/CORE/Standings';
 import { Schedule } from '../../types/CORE/Schedule';
 import { NEXTMATCHES } from '../NEXTMATCHES';
+import { selectMixedNews } from '../selectMixedNews';
+import { getStandingsScheduleLists } from '../getStandingsScheduleLists';
+import { processTemplateElements } from './process/templateElements';
+import { LEGACY__syncMainCompLayers } from './process/LEGACY__mainLayers';
+import { processPayload } from './process/payload';
+import { filterElements } from '../filterElements';
 
 /**
  * Testing CWINZ AE daily edition with the new core tables
@@ -138,42 +144,11 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, lang);
 
         /**
-         * Now we need a selection mechanism.
-         * If there is 1 of each sport we take the first item of each.
-         * So the mechanism is to grab the first item of each and then,
-         * if we haven't reached 5 items, we grab the second item of each
-         * and so on.
-         */
-        const selectMixedNews = () => {
-            let mixedNewsItems: DB.Item.JoinedNews[] = [];
-            let i = 0;
-            let keys = Object.keys(allNewsItems) as DB.SportName[];
-            
-            /**
-             * Because we're running a while loop
-             * let's first make sure that there are at least 5 items
-             * in all of the arrays together.
-             */
-            const totalItems: number = keys.reduce((acc, key) => acc + allNewsItems[key].length, 0);
-            if (totalItems < 5) throw `Not enough news items to mix. Total items: ${totalItems}`;
-
-            while (mixedNewsItems.length < 5){
-                let key = keys[i];
-                let newsItems = allNewsItems[key];
-                if (newsItems.length > 0){
-                    mixedNewsItems.push(newsItems.shift() as DB.Item.JoinedNews);
-                }
-                i++;
-                if (i === keys.length) i = 0;
-            }
-            return mixedNewsItems;
-        }
-
-        /**
          * @param newsItems and @param presenterFiles
          * contain all of the raw data we need
          */
-        const newsItems: DB.Item.JoinedNews[] = selectMixedNews();
+        const newsItems: DB.Item.JoinedNews[] = 
+            await selectMixedNews(allNewsItems);
         // console.log(`newsItems: ${JSON.stringify(newsItems, null, 4)}`);
         // return;
 
@@ -192,20 +167,10 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             presenter: dailyPresenterFilePaths,
         }
 
-        const newsItemElements: Template.Element.DB_Blueprint[] = 
-            objectElements
-                .filter(e => e.object_name === 'news-item')
-                .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
-
-        const standingsElements: Template.Element.DB_Blueprint[] = 
-            objectElements
-                .filter(e => e.object_name === 'standings-entry')
-                .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
-
-        const scheduleElements: Template.Element.DB_Blueprint[] =
-            objectElements
-                .filter(e => e.object_name === 'schedule-entry-MS')
-                .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
+        const {newsItemElements, standingsElements, scheduleElements} = filterElements(
+            objectElements,
+            elementBluePrints
+        );
 
         /**
          * Here we perform the element-level actions of the news items
@@ -221,49 +186,10 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             trimSyncData,
         )
 
-        let standingsLeagueSeasonIds: (string | null)[] = [];
-        let scheduleLeagueSeasonIds: (string | null)[] = [];
-        for (let i=0; i<newsItems.length; i++){
-            if (!!newsItems[i].show_standings){
-                standingsLeagueSeasonIds.push(newsItems[i].standings_league_season_id);
-            }
-            if (!!newsItems[i].show_next_matches){
-                scheduleLeagueSeasonIds.push(newsItems[i].schedule_league_season_id);
-            }
-        }
-
-        // console.log(`leagueSeasonsIds: ${JSON.stringify(leagueSeasonsIds, null, 4)}`);
-        // return;
-
-        let standingsLists: Standings.List[] = [];
-        let scheduleLists: Schedule.List[] = [];
-
-        for (let i=0; i<newsItems.length; i++){
-            const newsItem: DB.Item.JoinedNews = newsItems[i];
-
-            if (standingsLeagueSeasonIds[i] === null){
-                standingsLists.push({entries: [], header: ''});
-            } else {
-                const itemStandings: Standings.Entry[] = await STANDINGS.getStandingsEN(SportsDB, newsItem.sport_name, standingsLeagueSeasonIds[i] as string);
-                if (itemStandings.length === 0){
-                    standingsLists.push({entries: [], header: ''});
-                } else {
-                    standingsLists.push({entries: itemStandings, header: itemStandings[0].league_name});
-                }
-            }
-
-            if (scheduleLeagueSeasonIds[i] === null){
-                scheduleLists.push({entries: [], header: ''});
-            } else {
-                const schedule: DB.NextMatch_NewFormat[] = await NEXTMATCHES.getBySportNameAndLeagueSeasonId(SportsDB, newsItem.sport_name, scheduleLeagueSeasonIds[i] as string);
-                if (schedule.length === 0){
-                    scheduleLists.push({entries: [], header: ''});
-                } else {
-                    scheduleLists.push({entries: schedule, header: schedule[0].league_season_id});
-                }
-            }
-
-        }
+        const {standingsLists, scheduleLists} = await getStandingsScheduleLists(
+            SportsDB,
+            newsItems,
+        )
 
         populateStandingsElements(
             standingsLists,
@@ -296,207 +222,20 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             trimSyncData
         );
 
+        processTemplateElements(
+            templateElements,
+            elementBluePrints,
+            elementActions,
+            templateName,
+            files,
+            trimSyncData,
+            RAW_DATA
+        )
+
         // console.log(`trimSyncData: ${JSON.stringify(trimSyncData, null, 4)}`);
         // return;
 
-        /**
-         * We start with processing the smallest building blocks @param elements
-         * and build up from there... @param clusters, @param templateMainLayers.
-         * We need to start only with the elements that are of types:
-         * 'footageFile' | 'text' | 'audioFile' as inserting files and texts 
-         * is the first step
-         */
-        // let stage01_elements: Template.Element.Realized[] = [];
-        for (const templateElement of templateElements){
-            
-            const elementBluePrint: Template.Element.DB_Blueprint | undefined = elementBluePrints.find(e => e.element_name === templateElement.element_name);
-            if (!elementBluePrint) throw `Element blueprint not found for element ${templateElement.element_name} in template ${templateName}`;
-
-            if (elementBluePrint.element_type === 'preexisting') continue;
-            /**
-             * Now we have the blueprint.
-             * We need to resolve the naming scheme and variables
-             * example of the only template level element that answers
-             * to this category is the 'presenter' elements
-             * element_type: 'footageFile'
-             * naming_scheme: presenter-$sub_type
-             * variables: $sub_type ('open' | 'close')
-             */
-            
-            let layerCompName: string = elementBluePrint.naming_scheme
-                .replace('$sub_type', templateElement.element_subtype || '');
-
-            /**
-             * There are two actions for files
-             * but despite having the order written down
-             * in the DB, the AE extension will deal with it.
-             */
-            let eActions: Template.Element.Action[] = elementActions.filter(action => action.element_name === templateElement.element_name);
-
-            /**
-             * Let's try getting the files now
-             * We know that the element presenter is a footageFile
-             */
-            for (let action of eActions){
-                switch (action.action_type){
-                    case 'insertFile': {
-                        // locate filePath
-                        if (templateElement.element_name in RAW_DATA){
-                            const data = RAW_DATA[templateElement.element_name as keyof typeof RAW_DATA];
-                            if (
-                                templateElement.element_subtype 
-                                && templateElement.element_subtype in data
-                            ){
-                                const filePath = data[templateElement.element_subtype as keyof typeof data];
-                                if (!fs.existsSync(filePath))
-                                    throw `File path does not exist: ${filePath}`;
-
-                                const method = action.method as AE.Method.Resize;
-
-                                files.push({
-                                    absolutePath: filePath,
-                                    compositionName: layerCompName,
-                                    resizeAction: method,
-                                });
-                            } else {
-                                /**
-                                 * We regard @param RAW_DATA[templateElement.element_name]
-                                 * as a file path and not as an object
-                                 */
-                            }
-                        }
-                        break;
-                    }
-                    case 'insertText': {
-                        // locate text source
-                        break;
-                    }
-                    case 'trim': {
-                        const layerOrCompName: string = layerCompName;
-                        
-                        const trim: AE.Json.TS.Trim = {
-                            method: action.method as AE.Method.Trim,
-                            layerOrCompName: layerOrCompName,
-                        };
-                        trimSyncData.push(trim);
-                        break;
-                    }
-                    case 'sync': {
-                        break;
-                    }
-                    case 'marker': {
-                        break;
-                    }
-                    default: throw `Action type not recognized: ${action.action_type}`;
-                }
-            }
-        }
-
-        // HARDCODED-MODIFY
-        const syncMainCompLayers = () => {
-            // trim presenter containers
-            const presenteropenTrim: AE.Json.TS.Trim = {
-                method: 'trimByAudio',
-                layerOrCompName: 'presenter-open-container',
-            };
-            trimSyncData.push(presenteropenTrim);
-            const presentercloseTrim: AE.Json.TS.Trim = {
-                method: 'trimByAudio',
-                layerOrCompName: 'presenter-close-container',
-            };
-            trimSyncData.push(presentercloseTrim);
-            
-            // presenter-open to Intro
-            trimSyncData.push({
-                method: 'syncHeadTail',
-                padding: 0,
-                layerAName: 'presenter-open-container',
-                layerBName: 'intro',
-            });
-
-            // News comp 1 to presenter-open
-            trimSyncData.push({
-                method: 'syncHeadTail',
-                padding: 0,
-                layerAName: 'news-cluster1',
-                layerBName: 'presenter-open-container',
-            });
-
-            // news-cluster2 to news-cluster1
-            trimSyncData.push({
-                method: 'syncHeadTail',
-                padding: 0,
-                layerAName: 'news-cluster2',
-                layerBName: 'news-cluster1',
-            });
-            
-            // presenter-close to news-cluster2
-            trimSyncData.push({
-                method: 'syncHeadTail',
-                padding: 0,
-                layerAName: 'presenter-close-container',
-                layerBName: 'news-cluster2',
-            });
-
-            // Ending to presenter-close via single marker
-            trimSyncData.push({
-                method: 'syncMarkerToOutPoint',
-                padding: 0,
-                layerAName: 'outro',
-                layerBName: 'presenter-close-container',
-            });
-
-            const syncTransitions = () => {
-                const transitionLayerNames = [
-                    'trans-presenter-open-container',
-                    'trans-news-cluster1',
-                    'trans-news-cluster2',
-                ];
-
-                const syncToLayers = [
-                    'presenter-open-container',
-                    'news-cluster1',
-                    'news-cluster2',
-                ]
-
-                for (let i=0; i<transitionLayerNames.length; i++){
-                    const transLayerName = transitionLayerNames[i];
-                    const syncToLayer = syncToLayers[i];
-                    const syncMarker: AE.Json.TS.Sync = {
-                        method: 'syncMarkerToOutPoint',
-                        padding: 0,
-                        layerAName: transLayerName,
-                        layerBName: syncToLayer,
-                    }
-                    trimSyncData.push(syncMarker);
-                }
-            }
-
-            syncTransitions();
-
-            const syncSoundtrack = () => {
-                const syncMarker: AE.Json.TS.Sync = {
-                    method: 'syncMarkerToOutPoint',
-                    padding: 0,
-                    layerAName: 'soundtrack-outro',
-                    layerBName: 'presenter-close-container',
-                }
-                trimSyncData.push(syncMarker);
-
-                // now we trim the loop to the beginning of
-                // the soundtrack-outro
-                const trim: AE.Json.TS.Trim = {
-                    method: 'trimOutToIn',
-                    layerOrCompName: 'soundtrack-body',
-                    trimToLayer: 'soundtrack-outro',
-                };
-                trimSyncData.push(trim);
-            }
-
-            syncSoundtrack();
-        }
-
-        syncMainCompLayers();
+        LEGACY__syncMainCompLayers(trimSyncData);
 
         // Are we still going with random template?
         const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
@@ -512,39 +251,16 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         };
         trimSyncData.push(trim);
 
-        let payload: AE.Json.Payload = {
+        const axiosResponse = await processPayload(
             files,
             texts,
             trimSyncData,
-            names: {
-                exportComp: '0_Main comp',
-                importBin: 'Imports',
-            },
-            paths: PATHS.getAll__CORE(subFolders, edition),
-            dbg: {
-                dbgLevel: -7,
-                saveExportClose: {
-                    isSave: false,
-                    isExport: false,
-                    isClose: false,
-                },
-            },
-        };
-
-        for (let text of payload.texts) {
-            text.text = typeof text.text === 'string' ? text.text : String(text.text);
-            // Use convertedText here
-        }
-
-        const jsoned = JSON.stringify(payload).replace(/\\\\/g, '/');
-        // console.warn(jsoned);
-
-        // return;
-
-        const axiosResponse = await axios.post(
-            `http://localhost:${PORT}${API_Endpoint}`,
-            { stringifiedJSON: jsoned }
+            subFolders,
+            edition,
+            PORT,
+            API_Endpoint
         );
+
         console.log(JSON.stringify(axiosResponse.data));
     } catch (error) {
         console.error(error);
