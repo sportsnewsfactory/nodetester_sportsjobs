@@ -37,7 +37,8 @@ export async function getStandingsScheduleLists(
             if (itemStandings.length === 0){
                 standingsLists.push({entries: [], header: ''});
             } else {
-                standingsLists.push({entries: itemStandings, header: itemStandings[0].league_name});
+                // console.log(`itemStandings[0].league_name: ${itemStandings[0].league_name}`);
+                standingsLists.push({entries: itemStandings, header: itemStandings[0].league_season_name});
             }
         }
 

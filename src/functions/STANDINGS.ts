@@ -106,6 +106,7 @@ export const STANDINGS = {
                 if ('id' in item) delete item.id;
                 if ('team_id' in item) delete item.team_id;
                 if ('league_season_id' in item) delete item.league_season_id;
+                // if ('league_season_name' in item) console.log(item.league_season_name);
                 return item;
             }).sort((a, b) => Number(a.position) - Number(b.position));
             return items;

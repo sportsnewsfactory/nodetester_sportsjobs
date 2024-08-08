@@ -42,7 +42,7 @@ export function populateStandingsElements(
                     label_color: 'Red',
                     container_type: 'layer',
                     element_name: 'standings-allsports-cluster-header', //'header',
-                    naming_scheme: 'standings-cluster$num_item-header', // 'Ranking-header-$num_item',
+                    naming_scheme: 'standings-cluster$num_item-header', // standings-cluster1-header
                     element_type: 'text',
                     variables: '$num_item',
                     description: 'Header for standings',
@@ -55,7 +55,7 @@ export function populateStandingsElements(
                 const text: AE.Json.TextImport = {
                     text: header,
                     textLayerName,
-                    recursiveInsertion: false,
+                    recursiveInsertion: true,
                 };
 
                 // console.log(`%cvalue: ${header}, textLayerName: ${textLayerName}`, 'color: pink');
@@ -73,6 +73,10 @@ export function populateStandingsElements(
             // return;
 
             for (let e=0; e<entries.length; e++){
+                if (e === 10) {
+                    console.warn(`Found 10th entry`);
+                    break;
+                }
                 const entry = entries[e];
                 
                 // console.log(`%centry: ${JSON.stringify(entry, null, 4)}`,'color: orange');
