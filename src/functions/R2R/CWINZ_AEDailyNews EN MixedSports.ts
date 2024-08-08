@@ -40,6 +40,7 @@ import { processTemplateElements } from './process/templateElements';
 import { LEGACY__syncMainCompLayers } from './process/LEGACY__mainLayers';
 import { processPayload } from './process/payload';
 import { filterElements } from '../filterElements';
+import { populateScheduleElements__TESTING } from './populateScheduleElementsCWINZexperiment';
 
 /**
  * Testing CWINZ AE daily edition with the new core tables
@@ -197,12 +198,12 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             texts,
         );
 
-        // populateScheduleElements(
-        //     scheduleLists,
-        //     scheduleElements,
-        //     texts
-        // );
-        // return;
+        populateScheduleElements__TESTING(
+            scheduleLists,
+            scheduleElements,
+            texts
+        );
+        return;
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);
         // console.log(`files: ${JSON.stringify(files, null, 4)}`);
