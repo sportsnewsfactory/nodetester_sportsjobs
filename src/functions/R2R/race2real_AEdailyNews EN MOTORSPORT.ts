@@ -71,7 +71,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         // target date is tomorrow if after 17:00
         const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
 
-        const options = { month: 'long', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions;
+        const options = { month: 'short', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions;
         const introDate = targetDate.toLocaleDateString('en-US', options);
 
         let texts: AE.Json.TextImport[] = [];
