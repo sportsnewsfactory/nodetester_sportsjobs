@@ -32,6 +32,11 @@ export function populateStandingsElements(
         );
         if (!statElement) throw `Stat element not found`;
         
+        const statTitleElement: Template.Element.DB_Blueprint | undefined = standingsElements.find(
+            (element) => element.element_name === 'standings-allsports-stat-title'
+        );
+        if (!statTitleElement) throw `Stat element not found`;
+
         for (let i=0; i<standingsLists.length; i++){
             const numItem = i+1;
             const standingsList: Standings.List = standingsLists[i];
@@ -87,19 +92,20 @@ export function populateStandingsElements(
 
                 while(nextStat !== null){
                     
-                    console.log(`NextStat: ${JSON.stringify(nextStat)}`);
+                    // console.log(`NextStat: ${JSON.stringify(nextStat)}`);
                     
                     const populateStatTitle = (stat: Stat) => {
                         // probably a number
                         const value = stat.shortName;
 
-                        const textLayerName = statElement.naming_scheme
+                        const textLayerName = statTitleElement.naming_scheme
                             .replace('$num_item', String(numItem))
                             .replace('$num_entry', String(1))
                             .replace('$num_stat', String(statCounter));
 
                         // console.log(`%cvalue: ${value}, textLayerName: ${textLayerName}`, 'color: cyan')
-                        
+                        // throw 'stop';
+
                         const text: AE.Json.TextImport = {
                             text: value,
                             textLayerName,
@@ -123,7 +129,7 @@ export function populateStandingsElements(
             populateStatTitleRowText();
 
             for (let e=0; e<entries.length; e++){
-                if (e === 9) {
+                if (e === 10) {
                     console.warn(`Found 9th entry`);
                     break;
                 }
@@ -132,11 +138,11 @@ export function populateStandingsElements(
                 // console.log(`%centry: ${JSON.stringify(entry, null, 4)}`,'color: orange');
                 // return;
 
-                const numEntry = e+2;
+                const numEntry = e+1;
                 let statCounter = 1;
                 let hirarchyCounter = 0;
 
-                if (Number(entry.position) !== numEntry-1) 
+                if (Number(entry.position) !== numEntry) 
                     throw `Position mismatch @ list: ${numItem} entry #${numEntry}: position ${entry.position} !== ${numEntry}`;
 
                 /**

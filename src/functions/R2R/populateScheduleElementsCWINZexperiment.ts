@@ -24,6 +24,10 @@ export function populateScheduleElements__TESTING(
             // we'll currently ignore header
             // and sub_header
             for (let j=0; j<eventList.entries.length; j++){
+                if (j===5){
+                    console.log(`Reached event #${j}`);
+                    break;
+                }
                 const event = eventList.entries[j];
                 const numEntry = j+1;
                 
@@ -47,7 +51,7 @@ export function populateScheduleElements__TESTING(
                     and schedule-entry-MS-event-time
                 */
                 
-                const eventDate = new Date(Number(event.start_date_seconds)*1000);
+                const eventDate = new Date(Number(event.start_time_seconds)*1000);
                 // let's format date as dd MMM
                 const options = { day: '2-digit', month: 'short' } as Intl.DateTimeFormatOptions;
                 const date = eventDate.toLocaleDateString('en-US', options);

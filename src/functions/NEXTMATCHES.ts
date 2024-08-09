@@ -31,6 +31,10 @@ export const NEXTMATCHES = {
 
             const itemsResult = await DB.pool.execute(sql);
             const items = itemsResult[0] as DB.NextMatch_NewFormat[];
+            for (let i=0; i<items.length; i++){
+                const item = items[i];
+                if (!('start_time_seconds' in item)) throw `item ${i} has no start_time_seconds sportName: ${sportName}`;
+            }
             items.sort((a, b) => Number(a.start_time_seconds) - Number(b.start_time_seconds));
             return items;
         } catch (e) {
