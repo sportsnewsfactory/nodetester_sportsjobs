@@ -18,7 +18,7 @@ export const NEXTMATCHES = {
 
             const sql = `
                 SELECT rn.home_team_id, rn.away_team_id, rn.start_time_seconds, rn.start_time_timestamp, rn.league_season_id, 
-                    ct_home.name_code as home_team, ct_away.name_code as away_team, ls.name as league_season_name
+                    ct_home.name_code as home_team, ct_away.name_code as away_team, ls.name as league_season_name, rn.slug
                 FROM ${rn} as rn
                 INNER JOIN ${ct} as ct_home
                 ON rn.home_team_id = ct_home.id

@@ -30,11 +30,17 @@ export function populateScheduleElements__TESTING(
                 // throw JSON.stringify(event, null, 4);
                 /*
                     event: 
-                        slug: string;
-                        league_season_name: string;
-                        league_season_id: string;
-                        start_date_seconds: number;
-                        start_date_timestamp: string;
+                        {
+                            "home_team_id": 370089,
+                            "away_team_id": 246595,
+                            "start_time_seconds": 1723338044,
+                            "start_time_timestamp": "2024-08-10T22:00:44.000Z",
+                            "league_season_id": 57062,
+                            "home_team": "NFC",
+                            "away_team": "REW",
+                            "league_season_name": "Digicel Premier League  2024"
+                            "slug": "nasinu-fc-rewa-fc"
+                        }
 
                     We'll be converting slug to schedule-entry-MS-event-name
                     and start_date_timestamp to schedule-entry-MS-event-date 
@@ -48,11 +54,20 @@ export function populateScheduleElements__TESTING(
                 // let's format time as HH:MM
                 const time = eventDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
 
+                // const elementValues = {
+                //     'schedule-entry-MS-event-name': event.description,
+                //     // Let's show date in short format
+                //     'schedule-entry-MS-event-date': date,
+                //     'schedule-entry-MS-event-time': time,
+                // }
+
+                // console.log(`You are here`);
+
                 const elementValues = {
-                    'schedule-entry-MS-event-name': event.description,
-                    // Let's show date in short format
-                    'schedule-entry-MS-event-date': date,
-                    'schedule-entry-MS-event-time': time,
+                    'shedule-allsports-away-team': event.away_team,
+                    'shedule-allsports-home-team': event.home_team,
+                    'shedule-allsports-game-date': date,
+                    'shedule-allsports-game-time': time,
                 }
 
                 for (let key in elementValues){

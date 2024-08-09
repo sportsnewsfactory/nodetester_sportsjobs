@@ -203,7 +203,6 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             scheduleElements,
             texts
         );
-        return;
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);
         // console.log(`files: ${JSON.stringify(files, null, 4)}`);

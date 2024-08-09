@@ -72,9 +72,59 @@ export function populateStandingsElements(
             // console.log(`%centries: ${JSON.stringify(entries, null, 4)}`, 'color: cyan');
             // return;
 
+            const populateStatTitleRowText = () => {
+                const firstEntry: Standings.Entry = entries[0];
+                const entryStatTitles = Object.keys(firstEntry);
+
+                let statCounter = 1;
+                let hirarchyCounter = 0;
+
+                let nextStat: Stat | null = getNextStatByHirarchy(
+                    allPossibleStats, entryStatTitles, hirarchyCounter
+                );
+
+                if (nextStat === null) throw `nextStat is null for entry ${1}`;
+
+                while(nextStat !== null){
+                    
+                    console.log(`NextStat: ${JSON.stringify(nextStat)}`);
+                    
+                    const populateStatTitle = (stat: Stat) => {
+                        // probably a number
+                        const value = stat.shortName;
+
+                        const textLayerName = statElement.naming_scheme
+                            .replace('$num_item', String(numItem))
+                            .replace('$num_entry', String(1))
+                            .replace('$num_stat', String(statCounter));
+
+                        // console.log(`%cvalue: ${value}, textLayerName: ${textLayerName}`, 'color: cyan')
+                        
+                        const text: AE.Json.TextImport = {
+                            text: value,
+                            textLayerName,
+                            recursiveInsertion: false,
+                        };
+
+                        texts.push(text);
+                    }
+                    
+                    populateStatTitle(nextStat);
+
+                    statCounter++; // always increments by 1
+                    hirarchyCounter = nextStat.hirarchy; // always increments to the next hirarchy
+
+                    nextStat = getNextStatByHirarchy(
+                        allPossibleStats, entryStatTitles, hirarchyCounter
+                    );
+                }
+            }
+
+            populateStatTitleRowText();
+
             for (let e=0; e<entries.length; e++){
-                if (e === 10) {
-                    console.warn(`Found 10th entry`);
+                if (e === 9) {
+                    console.warn(`Found 9th entry`);
                     break;
                 }
                 const entry = entries[e];
@@ -82,11 +132,11 @@ export function populateStandingsElements(
                 // console.log(`%centry: ${JSON.stringify(entry, null, 4)}`,'color: orange');
                 // return;
 
-                const numEntry = e+1;
+                const numEntry = e+2;
                 let statCounter = 1;
                 let hirarchyCounter = 0;
 
-                if (Number(entry.position) !== numEntry) 
+                if (Number(entry.position) !== numEntry-1) 
                     throw `Position mismatch @ list: ${numItem} entry #${numEntry}: position ${entry.position} !== ${numEntry}`;
 
                 /**
@@ -130,6 +180,8 @@ export function populateStandingsElements(
 
                 while(nextStat !== null){
                     
+                    // console.log(`NextStat: ${JSON.stringify(nextStat)}`);
+
                     const populateStat = (stat: Stat) => {
                         // probably a number
                         const value = entry[stat.key];
@@ -164,7 +216,7 @@ export function populateStandingsElements(
                     // }
                 }
 
-                // console.log(`%cWe're done with entry ${e}`, 'color: green');
+                // throw `%cWe're done with entry ${e}`;
                 // return;
             }
 

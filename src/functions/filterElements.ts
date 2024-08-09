@@ -16,7 +16,7 @@ export function filterElements(
 
     const scheduleElements: Template.Element.DB_Blueprint[] =
         objectElements
-            .filter(e => e.object_name === 'schedule-entry-MS')
+            .filter(e => e.object_name === 'schedule-entry')
             .map(e => elementBluePrints.find(b => b.element_name === e.element_name) as Template.Element.DB_Blueprint);
 
     return {
