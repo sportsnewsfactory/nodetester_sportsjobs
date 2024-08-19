@@ -15,10 +15,15 @@ export async function getStandingsScheduleLists(
     for (let i=0; i<newsItems.length; i++){
         if (!!newsItems[i].show_standings){
             standingsLeagueSeasonIds.push(newsItems[i].standings_league_season_id);
+        } else {
+            standingsLeagueSeasonIds.push(null);
         }
         if (!!newsItems[i].show_next_matches){
             scheduleLeagueSeasonIds.push(newsItems[i].schedule_league_season_id);
+        } else {
+            scheduleLeagueSeasonIds.push(null);
         }
+
     }
 
     // console.log(`leagueSeasonsIds: ${JSON.stringify(leagueSeasonsIds, null, 4)}`);

@@ -122,7 +122,7 @@ export const SPORTNEWS = {
                 && sport.name !== 'Mixed' as DB.SportName
                 && sport.name !== 'Soccer' as DB.SportName
                 && sport.name !== 'Motorsport' as DB.SportName
-                && sport.name !== 'Misc' as DB.SportName
+                // && sport.name !== 'Misc' as DB.SportName
             );
         
         let items = {} as {[key in DB.SportName]: DB.Item.JoinedNews[]};
@@ -162,7 +162,7 @@ export const SPORTNEWS = {
                 
                 items[sport.name] = withSportName;
             } catch (e) {
-                throw `${funcName} failed with: ${e}`;
+                throw `${funcName} sport: ${sport.name} failed with: ${e}`;
             }
         }
 

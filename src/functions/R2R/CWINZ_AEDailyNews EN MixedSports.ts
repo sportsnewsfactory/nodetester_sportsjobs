@@ -69,7 +69,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
         const lang: CORE.Keys.Lang = 'EN';
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
-        const sportName: DB.SportName | 'Mixed' = 'Mixed';
+        const sportName: DB.SportName = 'Football';
 
         // WILL CHANGE TO motorsport1
         const templateName: string = 'mixed-sports1';
