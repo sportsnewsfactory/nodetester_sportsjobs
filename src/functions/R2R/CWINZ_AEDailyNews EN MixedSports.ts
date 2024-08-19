@@ -81,8 +81,9 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         // target date is tomorrow if after 17:00
         const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
 
+        const dateFormat = lang === 'EN' ? 'en-US' : 'hi-IN';
         const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
-        const introDate = targetDate.toLocaleDateString('en-US', options);
+        const introDate = targetDate.toLocaleDateString(dateFormat, options);
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
