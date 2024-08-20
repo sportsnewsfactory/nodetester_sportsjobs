@@ -7,6 +7,7 @@ export function populateScheduleElements__TESTING(
     schedule: Schedule.List[],
     scheduleElements: Template.Element.DB_Blueprint[],
     texts: AE.Json.TextImport[],
+    dateFormat: string,
 ){
     const now = new Date();
     const thisYear = now.getFullYear();
@@ -54,9 +55,9 @@ export function populateScheduleElements__TESTING(
                 const eventDate = new Date(Number(event.start_time_seconds)*1000);
                 // let's format date as dd MMM
                 const options = { day: '2-digit', month: 'short' } as Intl.DateTimeFormatOptions;
-                const date = eventDate.toLocaleDateString('en-US', options);
+                const date = eventDate.toLocaleDateString(dateFormat, options);
                 // let's format time as HH:MM
-                const time = eventDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+                const time = eventDate.toLocaleTimeString(dateFormat, {hour: '2-digit', minute: '2-digit'});
 
                 // const elementValues = {
                 //     'schedule-entry-MS-event-name': event.description,

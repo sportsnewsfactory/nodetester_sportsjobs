@@ -15,6 +15,10 @@ export async function selectMixedNews(
         let i = 0;
         let keys = Object.keys(allNewsItems) as DB.SportName[];
         
+        // for (let key in allNewsItems){
+        //     console.log(`${key}: ${allNewsItems[key].length}`);
+        // }
+
         /**
          * Because we're running a while loop
          * let's first make sure that there are at least 5 items

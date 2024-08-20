@@ -67,7 +67,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          */
         const brand_name: string = 'CWINZ';
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
-        const lang: CORE.Keys.Lang = 'EN';
+        const lang: CORE.Keys.Lang = 'AR'; // type CORE.Keys.Lang = "EN" | "HI" | "RO" | "AR"
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
         const sportName: DB.SportName = 'Football';
 
@@ -81,7 +81,13 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         // target date is tomorrow if after 17:00
         const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
 
-        const dateFormat = lang === 'EN' ? 'en-US' : 'hi-IN';
+        let dateFormat = '';
+        switch (lang as CORE.Keys.Lang){
+            case 'EN': {dateFormat = 'en-US'; break;}
+            case 'HI': {dateFormat = 'hi-IN'; break;}
+            case 'AR': {dateFormat = 'ar-SA'; break;}
+        }
+
         const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
         const introDate = targetDate.toLocaleDateString(dateFormat, options);
 
@@ -145,6 +151,8 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
             await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, lang);
 
+        // console.log(Object.keys(allNewsItems).join(', '))
+
         /**
          * @param newsItems and @param presenterFiles
          * contain all of the raw data we need
@@ -186,6 +194,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             texts,
             files,
             trimSyncData,
+            targetDate
         )
 
         const {standingsLists, scheduleLists} = await getStandingsScheduleLists(
@@ -202,7 +211,8 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         populateScheduleElements__TESTING(
             scheduleLists,
             scheduleElements,
-            texts
+            texts,
+            dateFormat
         );
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);

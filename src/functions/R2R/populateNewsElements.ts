@@ -17,7 +17,8 @@ export function populateNewsElements(
     elementActions: Template.Element.Action[],
     texts: AE.Json.TextImport[],
     files: AE.Json.FileImport[],
-    trimSyncData: AE.Json.TS.Sequence
+    trimSyncData: AE.Json.TS.Sequence,
+    targetDate: Date,
 ){
     const funcName = 'populateNewsElements';
     try {
@@ -131,12 +132,13 @@ export function populateNewsElements(
                                     break;
                                 }
                                 case 'narration': {
-                                    let targetDate = new Date();
-                                    if (targetDate.getHours() > 20) {
-                                        // If it's past 8pm, targetDate becomes tomorrow
-                                        targetDate.setDate(targetDate.getDate() + 1);
-                                    }
+                                    // let targetDate = new Date();
+                                    // if (targetDate.getHours() > 20) {
+                                    //     // If it's past 8pm, targetDate becomes tomorrow
+                                    //     targetDate.setDate(targetDate.getDate() + 1);
+                                    // }
                                     const dateFolderName = targetDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+                                    console.warn(`Target date: ${targetDate}\ndateFolderName: ${dateFolderName}`);
                                     //@ts-ignore
                                     const folderPath = `${generalFolderPaths.narration}${newsItem.sport_name}/${newsItem.lang}/${dateFolderName}`;
                                     const filePath = `${folderPath}/${value}`;

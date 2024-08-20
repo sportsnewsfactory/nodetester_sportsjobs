@@ -86,7 +86,7 @@ export namespace CORE {
             | 'product specific'
             | 'brand specific';
             
-        export type Lang = 'EN' | 'HI' | 'RO';
+        export type Lang = 'EN' | 'HI' | 'RO' | 'AR';
 
         export type RootFolder =
             | 'drive_path'
