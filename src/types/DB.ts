@@ -1,6 +1,12 @@
 import { AE } from './AE';
 
 export namespace DB {
+    export type Lang = {
+        lang: string;
+        date_format: string;
+        allowed_chars: string;
+    }
+    
     export type RenderMachine = {
         name: string;
         os: string;

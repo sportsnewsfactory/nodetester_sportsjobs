@@ -41,6 +41,7 @@ import { LEGACY__syncMainCompLayers } from './process/LEGACY__mainLayers';
 import { processPayload } from './process/payload';
 import { filterElements } from '../filterElements';
 import { populateScheduleElements__TESTING } from './populateScheduleElementsCWINZexperiment';
+import { TABLE_NAMES } from '../../config/DB_NAMES';
 
 /**
  * Testing CWINZ AE daily edition with the new core tables
@@ -67,9 +68,13 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          */
         const brand_name: string = 'CWINZ';
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
-        const lang: CORE.Keys.Lang = 'AR'; // type CORE.Keys.Lang = "EN" | "HI" | "RO" | "AR"
+        const langCode: CORE.Keys.Lang = 'AR'; // type CORE.Keys.Lang = "EN" | "HI" | "RO" | "AR"
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
         const sportName: DB.SportName = 'Football';
+
+        const langs: DB.Lang[] = await SportsDB.SELECT<DB.Lang>(TABLE_NAMES.config.langs)
+        const lang = langs.find(l => l.lang === langCode);
+        if (!lang) throw `Couldn't find langCode: ${langCode}`;
 
         // WILL CHANGE TO motorsport1
         const templateName: string = 'mixed-sports1';
@@ -81,15 +86,8 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         // target date is tomorrow if after 17:00
         const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
 
-        let dateFormat = '';
-        switch (lang as CORE.Keys.Lang){
-            case 'EN': {dateFormat = 'en-US'; break;}
-            case 'HI': {dateFormat = 'hi-IN'; break;}
-            case 'AR': {dateFormat = 'ar-SA'; break;}
-        }
-
         const options = { day: '2-digit', month: 'short', year: 'numeric' } as Intl.DateTimeFormatOptions;
-        const introDate = targetDate.toLocaleDateString(dateFormat, options);
+        const introDate = targetDate.toLocaleDateString(lang.date_format, options);
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
@@ -103,7 +101,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         });
 
         const {brand, edition, product} = 
-            await getBrandEditionProduct(SportsDB, brand_name, product_name, lang, sportName);
+            await getBrandEditionProduct(SportsDB, brand_name, product_name, langCode, sportName);
 
         // console.log(`brand: ${JSON.stringify(brand, null, 4)}`);
         // console.log(`edition: ${JSON.stringify(edition, null, 4)}`);
@@ -149,7 +147,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          * and then we'll export a sample json file.
          */
         const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
-            await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, lang);
+            await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, langCode);
 
         // console.log(Object.keys(allNewsItems).join(', '))
 
@@ -212,7 +210,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             scheduleLists,
             scheduleElements,
             texts,
-            dateFormat
+            lang.date_format
         );
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);

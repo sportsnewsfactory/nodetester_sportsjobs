@@ -31,6 +31,7 @@ import { populateStandingsElements } from './populateStandingsElementsR2RObsolet
 import { Motorsport } from '../../types/Motorsport';
 import { getMotorsportSchedule } from './components/getSchedule';
 import { populateScheduleElements } from './populateScheduleElements';
+import { TABLE_NAMES } from '../../config/DB_NAMES';
 
 /**
  * Testing Race2Real AE daily edition with the new core tables
@@ -57,9 +58,13 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
          */
         const brand_name: string = 'Race2Real';
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
-        const lang: CORE.Keys.Lang = 'EN';
+        const langCode: CORE.Keys.Lang = 'EN';
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
         const sportName: DB.SportName = 'Motorsport';
+
+        const langs: DB.Lang[] = await SportsDB.SELECT<DB.Lang>(TABLE_NAMES.config.langs)
+        const lang = langs.find(l => l.lang === langCode);
+        if (!lang) throw `Couldn't find langCode: ${langCode}`;
 
         // WILL CHANGE TO motorsport1
         const templateName: string = 'mixed-sports1';
@@ -72,7 +77,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
 
         const options = { month: 'short', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions;
-        const introDate = targetDate.toLocaleDateString('en-US', options);
+        const introDate = targetDate.toLocaleDateString(lang.date_format, options);
 
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
@@ -86,7 +91,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         });
 
         const {brand, edition, product} = 
-            await getBrandEditionProduct(SportsDB, brand_name, product_name, lang, sportName);
+            await getBrandEditionProduct(SportsDB, brand_name, product_name, langCode, sportName);
 
         // console.log(`brand: ${JSON.stringify(brand, null, 4)}`);
         // console.log(`edition: ${JSON.stringify(edition, null, 4)}`);
@@ -148,7 +153,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
          * contain all of the raw data we need
          */
         const newsItems: DB.Item.JoinedNews[] = 
-            await SPORTNEWS.getTransItemsByLang(SportsDB, sportName, lang);
+            await SPORTNEWS.getTransItemsByLang(SportsDB, sportName, langCode);
 
         // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
         // return;
@@ -192,6 +197,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
             texts,
             files,
             trimSyncData,
+            targetDate
         )
 
         let leagueSeasonsIds: (string | null)[] = 

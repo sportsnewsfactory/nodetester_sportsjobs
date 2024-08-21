@@ -137,8 +137,8 @@ export function populateNewsElements(
                                     //     // If it's past 8pm, targetDate becomes tomorrow
                                     //     targetDate.setDate(targetDate.getDate() + 1);
                                     // }
-                                    const dateFolderName = targetDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-                                    console.warn(`Target date: ${targetDate}\ndateFolderName: ${dateFolderName}`);
+                                    const dateFolderName = targetDate.toLocaleDateString('en-CA'); // Format: YYYY-MM-DD
+                                    // console.warn(`Target date: ${targetDate}\ndateFolderName: ${dateFolderName}`);
                                     //@ts-ignore
                                     const folderPath = `${generalFolderPaths.narration}${newsItem.sport_name}/${newsItem.lang}/${dateFolderName}`;
                                     const filePath = `${folderPath}/${value}`;
