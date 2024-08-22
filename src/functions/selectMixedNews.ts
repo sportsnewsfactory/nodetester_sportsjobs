@@ -25,6 +25,7 @@ export async function selectMixedNews(
          * in all of the arrays together.
          */
         const totalItems: number = keys.reduce((acc, key) => acc + allNewsItems[key].length, 0);
+                
         if (totalItems < 5) throw `Not enough news items to mix. Total items: ${totalItems}`;
 
         while (mixedNewsItems.length < 5){

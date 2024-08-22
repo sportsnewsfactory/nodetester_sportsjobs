@@ -1,35 +1,36 @@
 import fs from 'fs';
-import { MYSQL_DB } from '../../classes/MYSQL_DB';
-import { SPORTNEWS } from '../GENERALNEWS';
-import identifyRenderMachine from '../identifyRenderMachine';
-import { AE } from '../../types/AE';
-import { DB } from '../../types/DB';
-import { DailyPresenterScheme, getDailyPresenterScheme, getPresenterSchemeFiles } from '../Presenters';
-import { CORE } from '../../types/CORE';
-import { coreTables } from '../../constants/coreTables';
-import { getBrandEditionProduct } from '../helper/getBrandEditionProduct';
-import { TMPTables } from '../../constants/templateTables';
-import { Template } from '../../types/CORE/Template';
-import { populateNewsElements } from './populateNewsElements';
-import { newsClusterLevel } from './process/newsClusterLevel';
-import { getGeneralPaths } from './components/getGeneralPaths';
-import { Paths } from '../../types/CORE/Paths';
-import { getSubfolderStrucure } from './components/getSubfolderStructure';
-import { populateStandingsElements } from './populateStandingsElements';
-import { selectMixedNews } from '../selectMixedNews';
-import { getStandingsScheduleLists } from '../getStandingsScheduleLists';
-import { processTemplateElements } from './process/templateElements';
-import { LEGACY__syncMainCompLayers } from './process/LEGACY__mainLayers';
-import { processPayload } from './process/payload';
-import { filterElements } from '../filterElements';
-import { populateScheduleElements__TESTING } from './populateScheduleElementsCWINZexperiment';
-import { getLang } from '../getLang';
-import { getIntroDate } from '../getIntroDate';
+import { MYSQL_DB } from "../../classes/MYSQL_DB";
+import { coreTables } from "../../constants/coreTables";
+import { TMPTables } from "../../constants/templateTables";
+import { AE } from "../../types/AE";
+import { CORE } from "../../types/CORE";
+import { Paths } from "../../types/CORE/Paths";
+import { Template } from "../../types/CORE/Template";
+import { DB } from "../../types/DB";
+import { filterElements } from "../filterElements";
+import { SPORTNEWS } from "../GENERALNEWS";
+import { getIntroDate } from "../getIntroDate";
+import { getLang } from "../getLang";
+import { getStandingsScheduleLists } from "../getStandingsScheduleLists";
+import { getBrandEditionProduct } from "../helper/getBrandEditionProduct";
+import identifyRenderMachine from "../identifyRenderMachine";
+import { DailyPresenterScheme, getDailyPresenterScheme } from "../Presenters";
+import { getGeneralPaths } from "../R2R/components/getGeneralPaths";
+import { getSubfolderStrucure } from "../R2R/components/getSubfolderStructure";
+import { populateNewsElements } from "../R2R/populateNewsElements";
+import { populateScheduleElements__TESTING } from "../R2R/populateScheduleElementsCWINZexperiment";
+import { populateStandingsElements } from "../R2R/populateStandingsElements";
+import { LEGACY__syncMainCompLayers } from "../R2R/process/LEGACY__mainLayers";
+import { newsClusterLevel } from "../R2R/process/newsClusterLevel";
+import { processPayload } from "../R2R/process/payload";
+import { processTemplateElements } from "../R2R/process/templateElements";
+import { selectMixedNews } from "../selectMixedNews";
+import { processTemplateElementsNoPresenters } from '../R2R/process/templateElementsNoPresenters';
 
 /**
  * Testing CWINZ AE daily edition with the new core tables
  */
-export async function CWINZ_AE_daily_news__MIXED_EN() {    
+export async function CWINZ_AE_SNS_TEST() {    
     const SportsDB = new MYSQL_DB();
     SportsDB.createPool('SPORTS');
 
@@ -50,11 +51,11 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          * from the database.
          */
         const brand_name: string = 'CWINZ';
-        const product_name: CORE.Keys.Product = 'AE_Daily_News';
-        const langCode: string = 'AR';
+        const product_name: CORE.Keys.Product = 'SNS_AE_News';
+        const langCode: string = 'EN';
         const lang: DB.Lang = await getLang(SportsDB, langCode);
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
-        const sportName: DB.SportName = 'Football';
+        const sportName: DB.SportName = 'Basketball';
         const templateName: string = 'mixed-sports1';
 
         const PORT = 9411;
@@ -92,8 +93,17 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         );
     
         const templateMainLayers = await BackofficeDB.SELECT(TMPTables.templateMainLayers, {whereClause: {template_name: templateName}});
-        const templateClusters: Template.Record.Cluster[] = await BackofficeDB.SELECT(TMPTables.templateClusters, {whereClause: {template_name: templateName}});
-        const templateElements: Template.Record.Element[] = await BackofficeDB.SELECT(TMPTables.templateElements, {whereClause: {template_name: templateName}});
+        let templateClusters: Template.Record.Cluster[] = await BackofficeDB.SELECT(TMPTables.templateClusters, {whereClause: {template_name: templateName}});
+        
+        // HARDCODED-MODIFY
+        // removing manually the second cluster
+        templateClusters = templateClusters.filter(t => t.cluster_index === 1);
+        
+        let templateElements: Template.Record.Element[] = await BackofficeDB.SELECT(TMPTables.templateElements, {whereClause: {template_name: templateName}});
+        // HARDCODED-MODIFY
+        // removing manually presenter elements
+        templateElements = templateElements.filter(t => t.element_name !== 'presenter');
+        
         const objectElements: Template.Obj.Element[] = await BackofficeDB.SELECT(TMPTables.objectElements);
         const elementBluePrints: Template.Element.DB_Blueprint[] = await BackofficeDB.SELECT(TMPTables.elements);
         const objects: Template.Obj[] = await BackofficeDB.SELECT(TMPTables.objects);
@@ -108,7 +118,10 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
             await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, langCode);
 
+        // console.log(JSON.stringify(allNewsItems.Basketball, null, 4));
+
         // console.log(Object.keys(allNewsItems).join(', '))
+        // return;
 
         /**
          * @param newsItems and @param presenterFiles
@@ -121,8 +134,8 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
 
         // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
         // return;
-        const dailyPresenterFilePaths: DailyPresenterScheme = 
-            await getDailyPresenterScheme(SportsDB, edition, targetDate, subFolders.presenters);
+        // const dailyPresenterFilePaths: DailyPresenterScheme = 
+        //     await getDailyPresenterScheme(SportsDB, edition, targetDate, subFolders.presenters);
         
         /**
          * CONVERT LAYER TO SOURCES IN DB
@@ -130,21 +143,23 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          * the formula to get to the filepath must be in the DB
          * This is another BIG STEP
          */
-        let RAW_DATA = {
-            presenter: dailyPresenterFilePaths,
-        }
+        // let RAW_DATA = {
+        //     presenter: dailyPresenterFilePaths,
+        // }
 
         const {newsItemElements, standingsElements, scheduleElements} = filterElements(
             objectElements,
             elementBluePrints
         );
 
+        const threeFirstItems = newsItems.slice(0,3);
+
         /**
          * Here we perform the element-level actions of the news items
          * These actions involve files and texts and insert and trimming actions
          */
         populateNewsElements(
-            newsItems,
+            threeFirstItems,
             generalFolderPaths,
             newsItemElements,
             elementActions,
@@ -153,24 +168,6 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             trimSyncData,
             targetDate
         )
-
-        const {standingsLists, scheduleLists} = await getStandingsScheduleLists(
-            SportsDB,
-            newsItems,
-        )
-
-        populateStandingsElements(
-            standingsLists,
-            standingsElements,
-            texts,
-        );
-
-        populateScheduleElements__TESTING(
-            scheduleLists,
-            scheduleElements,
-            texts,
-            lang.date_format
-        );
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);
         // console.log(`files: ${JSON.stringify(files, null, 4)}`);
@@ -190,14 +187,13 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
             trimSyncData
         );
 
-        processTemplateElements(
+        processTemplateElementsNoPresenters(
             templateElements,
             elementBluePrints,
             elementActions,
             templateName,
             files,
-            trimSyncData,
-            RAW_DATA
+            trimSyncData
         )
 
         // console.log(`trimSyncData: ${JSON.stringify(trimSyncData, null, 4)}`);
@@ -206,9 +202,9 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
         LEGACY__syncMainCompLayers(trimSyncData);
 
         // Are we still going with random template?
-        const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
-        let templateFiles: string[] = templateFolderContent.filter(file => file.endsWith('.aep'));
-        if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
+        // const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
+        // let templateFiles: string[] = templateFolderContent.filter(file => file.endsWith('.aep'));
+        // if (templateFiles.length === 0) throw `No templates found in folder: ${subFolders.templates}`;
 
         // HARDCODED-MODIFY
         // set workarea

@@ -2,6 +2,7 @@ import axios, { AxiosResponse } from "axios";
 import { AE } from "../../../types/AE";
 import { CORE } from "../../../types/CORE";
 import { PATHS } from "../../PATHS";
+import { cleanText } from "./cleanText";
 
 export async function processPayload(
     files: AE.Json.FileImport[],
@@ -11,6 +12,7 @@ export async function processPayload(
     edition: CORE.Edition,
     PORT: number,
     API_Endpoint: string,
+    allowedChars: string,
 ): Promise<AxiosResponse<any, any>> {
     let payload: AE.Json.Payload = {
         files,
@@ -33,7 +35,7 @@ export async function processPayload(
 
     for (let text of payload.texts) {
         text.text = typeof text.text === 'string' ? text.text : String(text.text);
-        // Use convertedText here
+        text.text = cleanText(text.text, allowedChars);
     }
 
     

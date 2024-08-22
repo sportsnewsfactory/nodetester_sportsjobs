@@ -32,6 +32,9 @@ import { Motorsport } from '../../types/Motorsport';
 import { getMotorsportSchedule } from './components/getSchedule';
 import { populateScheduleElements } from './populateScheduleElements';
 import { TABLE_NAMES } from '../../config/DB_NAMES';
+import { cleanText } from './process/cleanText';
+import { getLang } from '../getLang';
+import { getIntroDate } from '../getIntroDate';
 
 /**
  * Testing Race2Real AE daily edition with the new core tables
@@ -61,27 +64,22 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
         const langCode: CORE.Keys.Lang = 'EN';
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
         const sportName: DB.SportName = 'Motorsport';
-
-        const langs: DB.Lang[] = await SportsDB.SELECT<DB.Lang>(TABLE_NAMES.config.langs)
-        const lang = langs.find(l => l.lang === langCode);
-        if (!lang) throw `Couldn't find langCode: ${langCode}`;
-
+        const lang: DB.Lang = await getLang(SportsDB, langCode);
+        
         // WILL CHANGE TO motorsport1
         const templateName: string = 'mixed-sports1';
 
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
-
-        const now = new Date();
-        // target date is tomorrow if after 17:00
-        const targetDate = now.getHours() > 17 ? new Date(now.getTime() + 24*60*60*1000) : now;
-
-        const options = { month: 'short', day: '2-digit', year: 'numeric' } as Intl.DateTimeFormatOptions;
-        const introDate = targetDate.toLocaleDateString(lang.date_format, options);
-
+        
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
         let trimSyncData: AE.Json.TS.Sequence = [];
+
+        const {introDate, targetDate} = getIntroDate(lang.date_format);
+
+        // console.log(`introDate: ${introDate} targetDate: ${targetDate}`);
+        // return;
 
         // HARDCODED-MODIFY
         texts.push({
@@ -498,10 +496,7 @@ export async function Race2Real_AE_daily_news__MOTORSPORT_EN() {
 
         for (let text of payload.texts) {
             text.text = typeof text.text === 'string' ? text.text.trim() : String(text.text).trim();
-            // text.text = text.text
-            //     .trim()
-            //     .replace(/"/g, '***dquote***')
-            //     .replace(/'/g, '***squote***');
+            text.text = cleanText(text.text, lang.allowed_chars);
         }
 
         const jsoned = JSON.stringify(payload).replace(/\\\\/g, '/');
