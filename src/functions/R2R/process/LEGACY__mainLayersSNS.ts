@@ -7,14 +7,14 @@ export function LEGACY__syncMainCompLayersSNS(
     trimSyncData.push({
         method: 'trimByAudio',
         layerOrCompName: 'news-cluster-container'
-    })
+    });
 
     trimSyncData.push({
         method: 'syncHeadTail',
         layerAName: 'news-cluster-container',
         layerBName: 'intro',
         padding: 0
-    })
+    });
     
     trimSyncData.push({
         method: 'syncMarkerToOutPoint',
@@ -24,13 +24,27 @@ export function LEGACY__syncMainCompLayersSNS(
     });
 
     const syncTransitions = () => {
-        const syncMarker: AE.Json.TS.Sync = {
-            method: 'syncMarkerToOutPoint',
-            padding: 0,
-            layerAName: 'trans-news-cluster-container',
-            layerBName: 'news-cluster-container',
+        const transitionLayerNames = [
+            'trans-intro',
+            'trans-news-cluster-container',
+        ];
+
+        const syncToLayers = [
+            'intro',
+            'news-cluster-container',
+        ]
+
+        for (let i=0; i<transitionLayerNames.length; i++){
+            const transLayerName = transitionLayerNames[i];
+            const syncToLayer = syncToLayers[i];
+            const syncMarker: AE.Json.TS.Sync = {
+                method: 'syncMarkerToOutPoint',
+                padding: 0,
+                layerAName: transLayerName,
+                layerBName: syncToLayer,
+            }
+            trimSyncData.push(syncMarker);
         }
-        trimSyncData.push(syncMarker);
     }
 
     syncTransitions();
@@ -39,7 +53,7 @@ export function LEGACY__syncMainCompLayersSNS(
         const syncMarker: AE.Json.TS.Sync = {
             method: 'syncMarkerToOutPoint',
             padding: 0,
-            layerAName: 'soundtrack-body',
+            layerAName: 'soundtrack-outro',
             layerBName: 'news-cluster-container',
         }
         trimSyncData.push(syncMarker);
@@ -47,9 +61,9 @@ export function LEGACY__syncMainCompLayersSNS(
         // now we trim the loop to the beginning of
         // the soundtrack-outro
         const trim: AE.Json.TS.Trim = {
-            method: 'trimInToOut',
+            method: 'trimOutToIn',
             layerOrCompName: 'soundtrack-body',
-            trimToLayer: 'soundtrack-intro',
+            trimToLayer: 'soundtrack-outro',
         };
         trimSyncData.push(trim);
     }
