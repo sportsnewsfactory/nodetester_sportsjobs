@@ -26,6 +26,7 @@ import { processPayload } from "../R2R/process/payload";
 import { processTemplateElements } from "../R2R/process/templateElements";
 import { selectMixedNews } from "../selectMixedNews";
 import { processTemplateElementsNoPresenters } from '../R2R/process/templateElementsNoPresenters';
+import { LEGACY__syncMainCompLayersSNS } from '../R2R/process/LEGACY__mainLayersSNS';
 
 /**
  * Testing CWINZ AE daily edition with the new core tables
@@ -199,7 +200,7 @@ export async function CWINZ_AE_SNS_TEST() {
         // console.log(`trimSyncData: ${JSON.stringify(trimSyncData, null, 4)}`);
         // return;
 
-        LEGACY__syncMainCompLayers(trimSyncData);
+        LEGACY__syncMainCompLayersSNS(trimSyncData);
 
         // Are we still going with random template?
         // const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
