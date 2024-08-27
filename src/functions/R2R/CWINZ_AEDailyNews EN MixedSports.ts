@@ -51,7 +51,7 @@ export async function CWINZ_AE_daily_news__MIXED_EN() {
          */
         const brand_name: string = 'CWINZ';
         const product_name: CORE.Keys.Product = 'AE_Daily_News';
-        const langCode: string = 'AR';
+        const langCode: string = 'HI';
         const lang: DB.Lang = await getLang(SportsDB, langCode);
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
         const sportName: DB.SportName = 'Football';

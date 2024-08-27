@@ -105,11 +105,10 @@ export function populateNewsElements(
 
                                     const method = action.method as AE.Method.Resize;
 
-                                    // HARDCODED-REFACTOR
                                     files.push({
                                         absolutePath: filePath,
                                         compositionName: layerCompName,
-                                        resizeAction: 'fitToMedia', // HARDCODED
+                                        resizeAction: method
                                     });
                                     break;
                                 }

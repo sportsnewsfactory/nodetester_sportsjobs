@@ -53,7 +53,7 @@ export async function CWINZ_AE_SNS_TEST() {
          */
         const brand_name: string = 'CWINZ';
         const product_name: CORE.Keys.Product = 'SNS_AE_News';
-        const langCode: string = 'EN';
+        const langCode: string = 'HI';
         const lang: DB.Lang = await getLang(SportsDB, langCode);
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
         const sportName: DB.SportName = 'Basketball';
