@@ -1,4 +1,3 @@
-import * as schedule from 'node-schedule';
 import getNextJob from './functions/get/nextJob';
 import { CORE } from '../types/CORE';
 import getEdition from './functions/get/edition';
@@ -29,8 +28,11 @@ export async function MAIN(){
         };
 
         if (!(product.product_name in PROCESS)) throw `No process found for ${product.product_name}`;
-        let result: string =  await PROCESS[product.product_name](processProps);
-        if (result.indexOf('Null is not an object')){
+        let result: string = await PROCESS[product.product_name](processProps);
+        
+        console.log(`First attempt: ${result}`);
+
+        if (result.indexOf('Null is not an object') > -1){
             console.log(`Going for second attempt`);
             result = await PROCESS[product.product_name]({...processProps, dbgLevel: -3});
         }

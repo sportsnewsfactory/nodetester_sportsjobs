@@ -1,6 +1,6 @@
 import { CORE } from "../../../types/CORE";
-import { process__AE_Daily_News } from "./product/AE_Daily_News";
-import { process__SNS_AE_News } from "./product/SNS_AE_News";
+import process__AE_Daily_News from "./product/AE_Daily_News";
+import process__SNS_AE_News from "./product/SNS_AE_News";
 
 export type GenericProcessProps = {
     SportsDB: any,

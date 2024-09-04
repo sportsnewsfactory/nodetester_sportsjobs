@@ -20,22 +20,16 @@ import { AE } from '../../../../types/AE';
 import { Paths } from '../../../../types/CORE/Paths';
 import { Template } from '../../../../types/CORE/Template';
 import { processPayloadWithDBG } from '../payload';
+import { GenericProcessProps } from '../PROCESS';
 
-export type ProcessAESNSProps = {
-    SportsDB: MYSQL_DB;
-    BackofficeDB: MYSQL_DB;
-    brand: CORE.Brand;
-    edition: CORE.Edition;
-    product: CORE.Product;
-    dbgLevel?: number;
-}
-
-export async function process__SNS_AE_News({
+export default async function process__SNS_AE_News({
     SportsDB, BackofficeDB,
     brand, edition, product,
     dbgLevel = -7
-}: ProcessAESNSProps): Promise<string> {    
+}: GenericProcessProps): Promise<string> {    
     
+    const funcName = 'process__SNS_AE_News';
+
     try {
         const lang: DB.Lang = await getLang(SportsDB, edition.lang);
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
@@ -211,11 +205,8 @@ export async function process__SNS_AE_News({
             dbgLevel
         );
 
-        return(JSON.stringify(axiosResponse.data));
-    } catch (error) {
-        return `processAESNS: ${error}`;
-    } finally {
-        await SportsDB.pool.end();
-        await BackofficeDB.pool.end();
+        return `${funcName}: ${JSON.stringify(axiosResponse.data)}`;
+    } catch (e) {
+        return `${funcName}: ${e}`; 
     }
 }

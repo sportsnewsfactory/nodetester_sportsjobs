@@ -26,21 +26,16 @@ import { Paths } from '../../../../types/CORE/Paths';
 import { Template } from '../../../../types/CORE/Template';
 import { DB } from '../../../../types/DB';
 import { processPayloadWithDBG } from '../payload';
+import { GenericProcessProps } from '../PROCESS';
 
-export type ProcessDailyNewsProps = {
-    SportsDB: MYSQL_DB;
-    BackofficeDB: MYSQL_DB;
-    brand: CORE.Brand;
-    edition: CORE.Edition;
-    product: CORE.Product;
-    dbgLevel?: number;
-}
-
-export async function process__AE_Daily_News({
+export default async function process__AE_Daily_News({
     SportsDB, BackofficeDB,
     brand, edition, product,
     dbgLevel = -7
-}: ProcessDailyNewsProps): Promise<string> {
+}: GenericProcessProps): Promise<string> {
+
+    const funcName = 'process__AE_Daily_News';
+
     try {
         // const brand_name: string = 'CWINZ';
         // const product_name: CORE.Keys.Product = 'AE_Daily_News';
@@ -223,11 +218,8 @@ export async function process__AE_Daily_News({
             dbgLevel
         );
 
-        return(JSON.stringify(axiosResponse.data));
-    } catch (error) {
-        return(JSON.stringify(error));
-    } finally {
-        await SportsDB.pool.end();
-        await BackofficeDB.pool.end();
+        return `${funcName}: ${JSON.stringify(axiosResponse.data)}`;
+    } catch (e) {
+        return `${funcName}: ${e}`; 
     }
 }
