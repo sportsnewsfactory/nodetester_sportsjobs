@@ -1,3 +1,6 @@
+import { CORE } from "./CORE";
+import { DB } from "./DB";
+
 /**
  * Here we define the final JSON data that
  * needs to be sent to the AE extension
@@ -94,4 +97,14 @@ export namespace AE {
             isClose: boolean;
         };
     }
+
+    export type Job = {
+        brand_name: string;
+        product_name: CORE.Keys.Product;
+        target_date: Date;
+        lang: string;
+        status: CORE.Keys.JobStatus;
+        when_created: Date;
+        when_updated: Date;
+    };
 }

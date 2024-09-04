@@ -11,8 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.11.10",
+    "@types/node-schedule": "^2.1.7",
     "axios": "^1.6.7",
     "dotenv": "^16.4.1",
-    "mysql2": "^3.9.1"
+    "mysql2": "^3.9.1",
+    "node-schedule": "^2.1.1"
   }
 }

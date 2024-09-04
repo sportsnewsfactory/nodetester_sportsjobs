@@ -49,6 +49,8 @@ export namespace CORE {
     };
     
     export namespace Keys {
+        export type JobStatus = 'fresh' | 'processing' | 'exported' | 'uploaded' | 'error' | 'archive';
+        
         export type ExpectedPathVariables = 
             | 'sport' 
             | 'lang' 
