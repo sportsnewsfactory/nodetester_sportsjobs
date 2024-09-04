@@ -24,13 +24,18 @@ export async function MAIN(){
         const brand: CORE.Brand = await getBrand(SportsDB, nextJob.brand_name);
         const product: CORE.Product = await getProduct(SportsDB, nextJob.product_name);
         
-        const processProps: GenericProcessProps = {
+        let processProps: GenericProcessProps = {
             SportsDB, BackofficeDB, brand, edition, product, dbgLevel: 1
         };
 
         if (!(product.product_name in PROCESS)) throw `No process found for ${product.product_name}`;
-        const result: string =  await PROCESS[product.product_name](processProps);
-    
+        let result: string =  await PROCESS[product.product_name](processProps);
+        if (result.indexOf('Null is not an object')){
+            console.log(`Going for second attempt`);
+            result = await PROCESS[product.product_name]({...processProps, dbgLevel: -3});
+        }
+        console.log(`MAIN: ${result}`);
+
     } catch (e) {
         console.warn(`MAIN: ${e}`);
     } finally {

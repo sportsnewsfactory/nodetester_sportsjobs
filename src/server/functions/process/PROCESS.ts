@@ -11,6 +11,7 @@ export type GenericProcessProps = {
     dbgLevel: number,
 };
 
+//@ts-ignore
 export const PROCESS: {[key in CORE.Keys.Product]: Function} = {
     AE_Daily_News: process__AE_Daily_News,
     SNS_AE_News: process__SNS_AE_News,
