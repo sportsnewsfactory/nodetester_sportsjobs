@@ -9,6 +9,8 @@ import { LOG } from './functions/log/LOG';
 import getTimestamp from './functions/get/timestamp';
 import recognizeError from './functions/error/recognize';
 import handleGoogleDriveReadError from './functions/error/handleGoogleDriveRead';
+import { TABLES } from '../config/TABLES';
+import { RowDataPacket } from 'mysql2';
 
 export default async function SERVER_MAIN(){
     const funcName = `SERVER_MAIN`;
@@ -43,6 +45,22 @@ export default async function SERVER_MAIN(){
 
         if (potentialErrorName === 'success'){
             LOG.message(`Process completed successfully`, 'green');
+
+            const updateSQL = `
+                UPDATE ${TABLES.jobs}
+                SET status = 'processing'
+                WHERE brand_name = '${nextJob.brand_name}'
+                AND product_name = '${nextJob.product_name}'
+                AND lang = '${nextJob.lang}';
+                AND status = 'fresh';
+            `;
+
+            const updateResult = await SportsDB.pool.execute(updateSQL);
+            if ((updateResult[0] as RowDataPacket).affectedRows === 1){
+                LOG.message(`Job status updated to 'processing'`, 'green');
+            } else {
+                throw `Job status not updated to 'processing'`;
+            }
             return;
         }
 
