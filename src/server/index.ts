@@ -26,6 +26,8 @@ export default async function SERVER_MAIN(){
         if (systemBusy) throw `System is busy`;
         if (!nextJob) throw `No job found`;
 
+        LOG.message(`Next job: ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang}`, 'pink');
+
         const edition: CORE.Edition = await getEdition(SportsDB, nextJob);
         const brand: CORE.Brand = await getBrand(SportsDB, nextJob.brand_name);
         const product: CORE.Product = await getProduct(SportsDB, nextJob.product_name);
@@ -51,7 +53,7 @@ export default async function SERVER_MAIN(){
                 SET status = 'processing'
                 WHERE brand_name = '${nextJob.brand_name}'
                 AND product_name = '${nextJob.product_name}'
-                AND lang = '${nextJob.lang}';
+                AND lang = '${nextJob.lang}'
                 AND status = 'fresh';
             `;
 

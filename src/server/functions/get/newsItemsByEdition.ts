@@ -79,7 +79,7 @@ export default async function getNewsItemsByEdition({
             }
         }
 
-        if (newsItems.length !== edition.items.length) throw `Not enough news items for edition ${edition.brand_name} ${edition.product_name} ${edition.lang}\nNumber of newsItems: ${newsItems.length}, required: ${edition.items.length}`;
+        if (newsItems.length < edition.items.length) throw `Not enough news items for edition ${edition.brand_name} ${edition.product_name} ${edition.lang}\nNumber of newsItems: ${newsItems.length}, required: ${edition.items.length}`;
         // console.log(`newsItems: ${newsItems.length}`);
 
         return newsItems;
