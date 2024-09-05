@@ -7,7 +7,7 @@ import fs from 'fs';
 import axios from 'axios';
 
 import { MYSQL_DB } from '../../classes/MYSQL_DB';
-import { GENERALNEWS, SPORTNEWS } from '../GENERALNEWS';
+import { SPORTNEWS } from '../SPORTNEWS';
 import identifyRenderMachine from '../identifyRenderMachine';
 import { AE } from '../../types/AE';
 import { DB } from '../../types/DB';

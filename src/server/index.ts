@@ -5,20 +5,25 @@ import { MYSQL_DB } from '../classes/MYSQL_DB';
 import getBrand from './functions/get/brand';
 import getProduct from './functions/get/product';
 import { GenericProcessProps, PROCESS } from './functions/process/PROCESS';
+import { LOG } from './functions/log/LOG';
+import getTimestamp from './functions/get/timestamp';
+import recognizeError from './functions/error/recognize';
+import handleGoogleDriveReadError from './functions/error/handleGoogleDriveRead';
 
-export async function MAIN(){
-    console.log(`This runs every minute ${new Date()}`);
-    
-    const SportsDB = new MYSQL_DB();
-    SportsDB.createPool('SPORTS');
+export default async function SERVER_MAIN(){
+    const funcName = `SERVER_MAIN`;
+    LOG.message(`${funcName} started @ ${getTimestamp()}`, 'gray');
 
-    const BackofficeDB = new MYSQL_DB();
-    BackofficeDB.createPool('BACKOFFICE');
+    const SportsDB = new MYSQL_DB(); SportsDB.createPool('SPORTS');
+    const BackofficeDB = new MYSQL_DB(); BackofficeDB.createPool('BACKOFFICE');
 
     try {
         const systemBusy = false;
-        const nextJob = await getNextJob(SportsDB);
-        if (systemBusy || !nextJob) return;
+        const nextJob = await getNextJob(SportsDB, 'fresh');
+        
+        if (systemBusy) throw `System is busy`;
+        if (!nextJob) throw `No job found`;
+
         const edition: CORE.Edition = await getEdition(SportsDB, nextJob);
         const brand: CORE.Brand = await getBrand(SportsDB, nextJob.brand_name);
         const product: CORE.Product = await getProduct(SportsDB, nextJob.product_name);
@@ -30,16 +35,21 @@ export async function MAIN(){
         if (!(product.product_name in PROCESS)) throw `No process found for ${product.product_name}`;
         let result: string = await PROCESS[product.product_name](processProps);
         
-        console.log(`First attempt: ${result}`);
+        let potentialErrorName = recognizeError(result);
+        
+        if (potentialErrorName === 'googleDriveRead') result = await handleGoogleDriveReadError({product, processProps, result});
+        
+        potentialErrorName = recognizeError(result);
 
-        if (result.indexOf('Null is not an object') > -1){
-            console.log(`Going for second attempt`);
-            result = await PROCESS[product.product_name]({...processProps, dbgLevel: -3});
+        if (potentialErrorName === 'success'){
+            LOG.message(`Process completed successfully`, 'green');
+            return;
         }
-        console.log(`MAIN: ${result}`);
 
+        throw result;
     } catch (e) {
-        console.warn(`MAIN: ${e}`);
+        // handle error
+        console.warn(`${funcName}: ${e}`);
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();

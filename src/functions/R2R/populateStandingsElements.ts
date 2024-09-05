@@ -130,7 +130,7 @@ export function populateStandingsElements(
 
             for (let e=0; e<entries.length; e++){
                 if (e === 10) {
-                    console.warn(`Found 9th entry`);
+                    // console.warn(`Found 9th entry`);
                     break;
                 }
                 const entry = entries[e];

@@ -8,7 +8,7 @@ import { Paths } from "../../types/CORE/Paths";
 import { Template } from "../../types/CORE/Template";
 import { DB } from "../../types/DB";
 import { filterElements } from "../filterElements";
-import { SPORTNEWS } from "../GENERALNEWS";
+import { SPORTNEWS } from "../SPORTNEWS";
 import { getIntroDate } from "../getIntroDate";
 import { getLang } from "../getLang";
 import { getStandingsScheduleLists } from "../getStandingsScheduleLists";

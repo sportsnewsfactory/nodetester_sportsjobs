@@ -1,7 +1,7 @@
 import { MYSQL_DB } from "../../classes/MYSQL_DB";
 import { AE } from "../../types/AE";
 import { DB } from "../../types/DB";
-import { GENERALNEWS } from "../GENERALNEWS";
+import { GENERALNEWS } from "../SPORTNEWS";
 import { NEXTMATCHES } from "../NEXTMATCHES";
 import { STANDINGS } from "../STANDINGS";
 import { formatDateAndTime } from "./formatDateTime";

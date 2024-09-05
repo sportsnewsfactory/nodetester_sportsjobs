@@ -1,7 +1,6 @@
 import { AE } from "../../types/AE";
 import { Schedule } from "../../types/CORE/Schedule";
 import { Template } from "../../types/CORE/Template";
-import { Motorsport } from "../../types/Motorsport";
 
 export function populateScheduleElements__TESTING(
     schedule: Schedule.List[],
@@ -26,7 +25,7 @@ export function populateScheduleElements__TESTING(
             // and sub_header
             for (let j=0; j<eventList.entries.length; j++){
                 if (j===5){
-                    console.log(`Reached event #${j}`);
+                    // console.log(`Reached event #${j}`);
                     break;
                 }
                 const event = eventList.entries[j];

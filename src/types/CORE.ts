@@ -1,3 +1,5 @@
+import { DB } from "./DB";
+
 export namespace CORE {
     /**
      * We start with the types and move on to namespaces
@@ -36,12 +38,19 @@ export namespace CORE {
         expected_variables: string; // comma separated list of variables prefixed with $
     };
 
+    export type ItemSpecs = {
+        type: string;
+        mixed: boolean;
+        sports: DB.SportName[];
+    }
+
     export type Edition = {
         sport: string;
         brand_name: string;
         product_name: Keys.Product;
         lang: string;
         presenter_scheme: string;
+        items: ItemSpecs[];
 
         export_file_name: string;
         project_file_name: string;

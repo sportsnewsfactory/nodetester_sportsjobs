@@ -6,7 +6,7 @@ import { getLang } from '../../../../functions/getLang';
 import { coreTables } from '../../../../constants/coreTables';
 import { TMPTables } from '../../../../constants/templateTables';
 import { filterElements } from '../../../../functions/filterElements';
-import { SPORTNEWS } from '../../../../functions/GENERALNEWS';
+import { SPORTNEWS } from '../../../../functions/SPORTNEWS';
 import { getIntroDate } from '../../../../functions/getIntroDate';
 import identifyRenderMachine from '../../../../functions/identifyRenderMachine';
 import { getGeneralPaths } from '../../../../functions/R2R/components/getGeneralPaths';
@@ -21,6 +21,7 @@ import { Paths } from '../../../../types/CORE/Paths';
 import { Template } from '../../../../types/CORE/Template';
 import { processPayloadWithDBG } from '../payload';
 import { GenericProcessProps } from '../PROCESS';
+import getNewsItemsByEdition from '../../get/newsItemsByEdition';
 
 export default async function process__SNS_AE_News({
     SportsDB, BackofficeDB,
@@ -93,8 +94,8 @@ export default async function process__SNS_AE_News({
          * then we will manipulate the data to fit the actions scheme
          * and then we'll export a sample json file.
          */
-        const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
-            await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, edition.lang);
+        // const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
+        //     await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, edition.lang);
 
         // console.log(JSON.stringify(allNewsItems.Basketball, null, 4));
 
@@ -105,8 +106,14 @@ export default async function process__SNS_AE_News({
          * @param newsItems and @param presenterFiles
          * contain all of the raw data we need
          */
-        const newsItems: DB.Item.JoinedNews[] = 
-            await selectMixedNews(allNewsItems);
+        const newsItems: DB.Item.JoinedNews[] = await getNewsItemsByEdition({
+            DB: SportsDB,
+            edition,
+            lang,
+            targetDate
+        });
+        // const newsItems: DB.Item.JoinedNews[] = 
+        //     await selectMixedNews(allNewsItems);
         // console.log(`newsItems: ${JSON.stringify(newsItems, null, 4)}`);
         // return;
 
@@ -207,6 +214,6 @@ export default async function process__SNS_AE_News({
 
         return `${funcName}: ${JSON.stringify(axiosResponse.data)}`;
     } catch (e) {
-        return `${funcName}: ${e}`; 
+        return `${funcName}: ${e}`;
     }
 }

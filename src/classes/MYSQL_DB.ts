@@ -44,7 +44,7 @@ export class MYSQL_DB {
             }
 
             this.pool = createPool(config);
-            console.log(`Connected to MySql DB`);
+            // console.log(`Connected to MySql DB`);
 
             return 'MySql pool generated successfully';
         } catch (e) {

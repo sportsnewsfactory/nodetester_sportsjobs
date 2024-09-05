@@ -9,7 +9,7 @@ import { coreTables } from '../../constants/coreTables';
 import { AE } from '../../types/AE';
 import { CORE } from '../../types/CORE';
 import { DB } from '../../types/DB';
-import { GENERALNEWS, SPORTNEWS } from '../GENERALNEWS';
+import { GENERALNEWS, SPORTNEWS } from '../SPORTNEWS';
 import { buildAbsoluteSubfolderStructure__AE } from '../helper/buildAbsoluteSubfolderStructure';
 import { getBrandEditionProduct } from '../helper/getBrandEditionProduct';
 import identifyRenderMachine from '../identifyRenderMachine';
