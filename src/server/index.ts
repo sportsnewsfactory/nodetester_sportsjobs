@@ -45,8 +45,8 @@ export default async function SERVER_MAIN(){
         
         potentialErrorName = recognizeError(result);
 
-        if (potentialErrorName === 'success'){
-            LOG.message(`Process completed successfully`, 'green');
+        if (potentialErrorName === 'success' || potentialErrorName === 'empty' || potentialErrorName === 'context'){
+            LOG.message(`Process completed successfully (${potentialErrorName})`, 'green');
 
             const updateSQL = `
                 UPDATE ${TABLES.jobs}

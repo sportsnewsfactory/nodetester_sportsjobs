@@ -8,6 +8,6 @@ import * as schedule from 'node-schedule';
 // CWINZ_AE_daily_news__MIXED_EN();
 // CWINZ_AE_SNS_TEST();
 
-// schedule.scheduleJob('* * * * *', MAIN);
-MAIN();
+schedule.scheduleJob('* * * * *', MAIN);
+// MAIN();
 // getNextJob();
