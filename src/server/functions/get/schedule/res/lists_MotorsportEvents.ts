@@ -1,7 +1,7 @@
-import { MYSQL_DB } from "../../../../classes/MYSQL_DB";
-import { MOTORSPORT_EVENTS } from "../../../../functions/MOTORSPORT_EVENTS";
-import { DB } from "../../../../types/DB";
-import { Motorsport } from "../../../../types/Motorsport";
+import { MYSQL_DB } from "../../../../../classes/MYSQL_DB";
+import { MOTORSPORT_EVENTS } from "../../../../../functions/MOTORSPORT_EVENTS";
+import { DB } from "../../../../../types/DB";
+import { Motorsport } from "../../../../../types/Motorsport";
 
 export default async function lists_MotorsportEvents(
     SportsDB: MYSQL_DB,

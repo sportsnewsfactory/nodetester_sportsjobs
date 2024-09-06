@@ -1,4 +1,4 @@
-import { DB } from "../../../../types/DB";
+import { DB } from "../../../../../types/DB";
 
 /**
  * @param sortedNewsItems must be the final sorting

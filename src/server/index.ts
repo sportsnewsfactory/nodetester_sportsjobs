@@ -11,6 +11,7 @@ import recognizeError from './functions/error/recognize';
 import handleGoogleDriveReadError from './functions/error/handleGoogleDriveRead';
 import { TABLES } from '../config/TABLES';
 import { RowDataPacket } from 'mysql2';
+import cleanup from './functions/cleanup';
 
 export default async function SERVER_MAIN(){
     const funcName = `SERVER_MAIN`;
@@ -73,6 +74,7 @@ export default async function SERVER_MAIN(){
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
+        await cleanup();
     }
     
 }

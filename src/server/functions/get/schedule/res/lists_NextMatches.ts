@@ -1,7 +1,7 @@
-import { MYSQL_DB } from "../../../../classes/MYSQL_DB";
-import { NEXTMATCHES } from "../../../../functions/NEXTMATCHES";
-import { Schedule } from "../../../../types/CORE/Schedule";
-import { DB } from "../../../../types/DB";
+import { MYSQL_DB } from "../../../../../classes/MYSQL_DB";
+import { NEXTMATCHES } from "../../../../../functions/NEXTMATCHES";
+import { Schedule } from "../../../../../types/CORE/Schedule";
+import { DB } from "../../../../../types/DB";
 
 export default async function lists_NextMatches(SportsDB: MYSQL_DB,
     sortedNewsItems: DB.Item.JoinedNews[],
