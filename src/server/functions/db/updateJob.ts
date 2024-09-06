@@ -3,19 +3,21 @@ import { MYSQL_DB } from "../../../classes/MYSQL_DB";
 import { TABLES } from "../../../config/TABLES";
 import { LOG } from "../log/LOG";
 import { AE } from "../../../types/AE";
+import { CORE } from "../../../types/CORE";
 
 type UpdateJobProps = {
     SportsDB: MYSQL_DB,
     nextJob: AE.Job,
     log: string
+    newStatus: CORE.Keys.JobStatus
 };
 
 export default async function updateJob({
-    SportsDB, nextJob, log
+    SportsDB, nextJob, log, newStatus
 }: UpdateJobProps ){
     const updateSQL = `
         UPDATE ${TABLES.jobs}
-        SET status = 'processing'
+        SET status = '${newStatus}'
         WHERE brand_name = '${nextJob.brand_name}'
         AND product_name = '${nextJob.product_name}'
         AND lang = '${nextJob.lang}'
@@ -24,6 +26,6 @@ export default async function updateJob({
 
     const updateResult = await SportsDB.pool.execute(updateSQL);
     if ((updateResult[0] as RowDataPacket).affectedRows === 1) 
-        LOG.consoleAndWrite(log, `Job status updated to 'processing'`, 'green');
-    else throw `Job status not updated to 'processing'`;
+        LOG.consoleAndWrite(log, `Job status updated to ${newStatus}`, 'green');
+    else throw `Job status not updated to ${newStatus}`;
 }

@@ -16,19 +16,23 @@ import updateJob from './functions/db/updateJob';
 
 export default async function SERVER_MAIN(){
     const funcName = `SERVER_MAIN`;
+    
+    // init log
     let log = '';
     let nextMessage = `${funcName} started @ ${getTimestamp()}`;
     LOG.consoleAndWrite(log, nextMessage, 'gray');
 
+    // init databases
     const SportsDB = new MYSQL_DB(); SportsDB.createPool('SPORTS');
     const BackofficeDB = new MYSQL_DB(); BackofficeDB.createPool('BACKOFFICE');
 
     try {
+        // will be used to check if system is busy
         const systemBusy = false;
+        if (systemBusy){ LOG.consoleAndWrite(log, `System is busy`, 'yellow'); return true; }
+
         const nextJob: AE.Job | null = await getNextJob(SportsDB, 'fresh');
-        
-        if (systemBusy) throw `System is busy`;
-        if (!nextJob) throw `No job found`;
+        if (!nextJob){ LOG.consoleAndWrite(log, `No fresh jobs found`, 'yellow'); return true; }
 
         nextMessage = `Next job: ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang}`;
         LOG.consoleAndWrite(log, nextMessage, 'pink');
@@ -46,19 +50,21 @@ export default async function SERVER_MAIN(){
         
         let potentialErrorName = recognizeError(result);
         
+        // only in the event of a googleDriveRead error, we'll retry the process.
         if (potentialErrorName === 'googleDriveRead') result = await handleGoogleDriveReadError({product, processProps, result});
         
         potentialErrorName = recognizeError(result);
 
-        if (!(potentialErrorName === 'success' || 
-            potentialErrorName === 'empty' || 
-            potentialErrorName === 'context')) 
+        // if there's an error that is not of the following types, throw the result.
+        if (!(potentialErrorName === 'success' || potentialErrorName === 'empty' || potentialErrorName === 'context')){
+            await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
             throw result;
+        }
 
         nextMessage = `Process completed successfully (${potentialErrorName})`;
         LOG.consoleAndWrite(log, nextMessage, 'green');
 
-        await updateJob({ SportsDB, nextJob, log });
+        await updateJob({ SportsDB, nextJob, log, newStatus: 'processing' });
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;

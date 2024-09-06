@@ -1,0 +1,1 @@
+export const logsFolderPath = 'G:/My Drive/Sports/S_Logs/';

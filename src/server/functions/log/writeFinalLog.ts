@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import getTimestamp from '../get/timestamp';
+import { logsFolderPath } from '../../../constants/logsFolderPath';
 
 export default function writeFinalLog(log: string){
     // get date in format: ddmmyy-hhmm
@@ -19,10 +20,10 @@ export default function writeFinalLog(log: string){
     const hasError = log.toLowerCase().includes('error');
 
     // Get the current working directory
-    const workingDir = process.cwd();
+    // const workingDir = process.cwd();
 
     // Construct the file path
-    const filePath = path.join(workingDir, 'logs', formattedDate, `${hasError && ' err'}.txt`);
-
+    // const filePath = path.join(workingDir, 'logs', formattedDate, `${hasError && ' err'}.txt`);
+    const filePath = path.join(logsFolderPath, `${formattedDate}${hasError && ' err'}.txt`);
     fs.writeFileSync(filePath, log);
 }
