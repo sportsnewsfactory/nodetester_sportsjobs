@@ -65,15 +65,15 @@ export default async function SERVER_MAIN(){
         LOG.consoleAndWrite(log, nextMessage, 'green');
 
         await updateJob({ SportsDB, nextJob, log, newStatus: 'processing' });
+        writeFinalLog(log);
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
         LOG.consoleAndWrite(log, nextMessage, 'red');
+        writeFinalLog(log);
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
-        
-        writeFinalLog(log);
         await cleanup();
     }
 }
