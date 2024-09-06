@@ -3,7 +3,6 @@ import getTimestamp from './server/functions/get/timestamp';
 import fs from 'fs';
 import path from 'path';
 import { LOG } from './server/functions/log/LOG';
-import logFiles from './server/functions/cleanup/res/logFiles';
 
 schedule.scheduleJob('*/2 * * * *', writeDateAndTime);
 
