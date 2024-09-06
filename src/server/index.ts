@@ -9,25 +9,29 @@ import { LOG } from './functions/log/LOG';
 import getTimestamp from './functions/get/timestamp';
 import recognizeError from './functions/error/recognize';
 import handleGoogleDriveReadError from './functions/error/handleGoogleDriveRead';
-import { TABLES } from '../config/TABLES';
-import { RowDataPacket } from 'mysql2';
 import cleanup from './functions/cleanup';
+import writeFinalLog from './functions/log/writeFinalLog';
+import { AE } from '../types/AE';
+import updateJob from './functions/db/updateJob';
 
 export default async function SERVER_MAIN(){
     const funcName = `SERVER_MAIN`;
-    LOG.message(`${funcName} started @ ${getTimestamp()}`, 'gray');
+    let log = '';
+    let nextMessage = `${funcName} started @ ${getTimestamp()}`;
+    LOG.consoleAndWrite(log, nextMessage, 'gray');
 
     const SportsDB = new MYSQL_DB(); SportsDB.createPool('SPORTS');
     const BackofficeDB = new MYSQL_DB(); BackofficeDB.createPool('BACKOFFICE');
 
     try {
         const systemBusy = false;
-        const nextJob = await getNextJob(SportsDB, 'fresh');
+        const nextJob: AE.Job | null = await getNextJob(SportsDB, 'fresh');
         
         if (systemBusy) throw `System is busy`;
         if (!nextJob) throw `No job found`;
 
-        LOG.message(`Next job: ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang}`, 'pink');
+        nextMessage = `Next job: ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang}`;
+        LOG.consoleAndWrite(log, nextMessage, 'pink');
 
         const edition: CORE.Edition = await getEdition(SportsDB, nextJob);
         const brand: CORE.Brand = await getBrand(SportsDB, nextJob.brand_name);
@@ -46,35 +50,24 @@ export default async function SERVER_MAIN(){
         
         potentialErrorName = recognizeError(result);
 
-        if (potentialErrorName === 'success' || potentialErrorName === 'empty' || potentialErrorName === 'context'){
-            LOG.message(`Process completed successfully (${potentialErrorName})`, 'green');
+        if (!(potentialErrorName === 'success' || 
+            potentialErrorName === 'empty' || 
+            potentialErrorName === 'context')) 
+            throw result;
 
-            const updateSQL = `
-                UPDATE ${TABLES.jobs}
-                SET status = 'processing'
-                WHERE brand_name = '${nextJob.brand_name}'
-                AND product_name = '${nextJob.product_name}'
-                AND lang = '${nextJob.lang}'
-                AND status = 'fresh';
-            `;
+        nextMessage = `Process completed successfully (${potentialErrorName})`;
+        LOG.consoleAndWrite(log, nextMessage, 'green');
 
-            const updateResult = await SportsDB.pool.execute(updateSQL);
-            if ((updateResult[0] as RowDataPacket).affectedRows === 1){
-                LOG.message(`Job status updated to 'processing'`, 'green');
-            } else {
-                throw `Job status not updated to 'processing'`;
-            }
-            return;
-        }
-
-        throw result;
+        await updateJob({ SportsDB, nextJob, log });
     } catch (e) {
         // handle error
-        console.warn(`${funcName}: ${e}`);
+        nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
+        LOG.consoleAndWrite(log, nextMessage, 'red');
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
+        
+        writeFinalLog(log);
         await cleanup();
     }
-    
 }
