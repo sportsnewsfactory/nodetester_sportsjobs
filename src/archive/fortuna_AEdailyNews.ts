@@ -5,21 +5,21 @@
 import fs from 'fs';
 import axios from 'axios';
 
-import { MYSQL_DB } from './classes/MYSQL_DB';
-import { GENERALNEWS } from './functions/SPORTNEWS';
-import { STANDINGS } from './functions/STANDINGS';
-import identifyRenderMachine from './functions/identifyRenderMachine';
-import { AE } from './types/AE';
-import { DB } from './types/DB';
-import { PATHS } from './functions/PATHS';
-import { itemTextKeys, mappingFuncs, itemFileKeys, standingTextKeys } from './functions/MAPPING';
-import { PRESENTERSCHEMES } from './functions/PRESENTERSCHEMES';
-import { getPresenterSchemeFiles } from './functions/Presenters';
-import { NEXTMATCHES } from './functions/NEXTMATCHES';
-import { CORE } from './types/CORE';
-import { coreTables } from './constants/coreTables';
-import { getBrandEditionProduct } from './functions/helper/getBrandEditionProduct';
-import { buildAbsoluteSubfolderStructure__AE } from './functions/helper/buildAbsoluteSubfolderStructure';
+import { MYSQL_DB } from '../classes/MYSQL_DB';
+import { GENERALNEWS } from '../functions/SPORTNEWS';
+import { STANDINGS } from '../functions/STANDINGS';
+import identifyRenderMachine from '../functions/identifyRenderMachine';
+import { AE } from '../types/AE';
+import { DB } from '../types/DB';
+import { PATHS } from '../functions/PATHS';
+import { itemTextKeys, mappingFuncs, itemFileKeys, standingTextKeys } from '../functions/MAPPING';
+import { PRESENTERSCHEMES } from '../functions/PRESENTERSCHEMES';
+import { getPresenterSchemeFiles } from '../functions/Presenters';
+import { NEXTMATCHES } from '../functions/NEXTMATCHES';
+import { CORE } from '../types/CORE';
+import { coreTables } from '../constants/coreTables';
+import { getBrandEditionProduct } from '../functions/helper/getBrandEditionProduct';
+import { buildAbsoluteSubfolderStructure__AE } from '../functions/helper/buildAbsoluteSubfolderStructure';
 import path from 'path';
 
 /**
