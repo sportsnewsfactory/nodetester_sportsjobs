@@ -68,9 +68,11 @@ export default async function getNewsItemsByEdition({
         }
 
         if (newsItems.length !== edition.items.length && allAvailableNewsItems.Misc.length > 0){
-            // console.log(`Adding Misc items`);
-            for (let i = 0; i < edition.items.length - newsItems.length; i++){
+            // console.log(`Adding Misc items. Length: ${allAvailableNewsItems.Misc.length}`);
+            for (let i = 0; i <= edition.items.length - newsItems.length; i++){
+                // console.log(`edition.items.length: ${edition.items.length}, newsItems.length: ${newsItems.length}`);
                 const nextMiscItem = allAvailableNewsItems.Misc.shift();
+                // console.log(`nextMiscItem: ${JSON.stringify(nextMiscItem,null,4)}`);
                 if (!nextMiscItem) {
                     // console.warn(`We're out of items for Misc`);
                     continue;

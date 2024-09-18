@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'victor server v1.0.0',
+      name: 'victor server',
       script: './build/index.js',
       watch: true, // Enable watching for changes
       env: {

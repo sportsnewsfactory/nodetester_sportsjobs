@@ -24,6 +24,6 @@ export default function writeFinalLog(log: string){
 
     // Construct the file path
     // const filePath = path.join(workingDir, 'logs', formattedDate, `${hasError && ' err'}.txt`);
-    const filePath = path.join(logsFolderPath, `${formattedDate}${hasError ? ' err' : ''}.txt`);
+    const filePath = path.join(logsFolderPath, `${formattedDate}${hasError ? 'err' : ''}.txt`);
     fs.writeFileSync(filePath, log);
 }

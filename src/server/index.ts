@@ -20,7 +20,8 @@ export default async function SERVER_MAIN(){
     // init log
     let log = '';
     let nextMessage = `${funcName} started @ ${getTimestamp()}`;
-    LOG.consoleAndWrite(log, nextMessage, 'gray');
+    log += nextMessage + '\n';
+    LOG.message(nextMessage, 'gray');
 
     // init databases
     const SportsDB = new MYSQL_DB(); SportsDB.createPool('SPORTS');
@@ -29,13 +30,24 @@ export default async function SERVER_MAIN(){
     try {
         // will be used to check if system is busy
         const systemBusy = false;
-        if (systemBusy){ LOG.consoleAndWrite(log, `System is busy`, 'yellow'); return true; }
+        if (systemBusy){ 
+            nextMessage = `System is busy`;
+            LOG.message(nextMessage, 'yellow');
+            log += nextMessage + '\n';
+            return true; 
+        }
 
         const nextJob: AE.Job | null = await getNextJob(SportsDB, 'fresh');
-        if (!nextJob){ LOG.consoleAndWrite(log, `No fresh jobs found`, 'yellow'); return true; }
+        if (!nextJob){ 
+            nextMessage = `No fresh jobs found`;
+            LOG.message(nextMessage, 'yellow');
+            log += nextMessage + '\n';
+            return true; 
+        }
 
         nextMessage = `Next job: ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang}`;
-        LOG.consoleAndWrite(log, nextMessage, 'pink');
+        log += nextMessage + '\n';
+        LOG.message(nextMessage, 'pink');
 
         const edition: CORE.Edition = await getEdition(SportsDB, nextJob);
         const brand: CORE.Brand = await getBrand(SportsDB, nextJob.brand_name);
@@ -57,23 +69,25 @@ export default async function SERVER_MAIN(){
 
         // if there's an error that is not of the following types, throw the result.
         if (!(potentialErrorName === 'success' || potentialErrorName === 'empty' || potentialErrorName === 'context')){
-            await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
+            // Let's try not updating the job status to error, so that we can retry the process.
+            // await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
             throw result;
         }
 
         nextMessage = `Process completed successfully (${potentialErrorName})`;
-        LOG.consoleAndWrite(log, nextMessage, 'green');
+        log += nextMessage + '\n';
+        LOG.message(nextMessage, 'green');
 
         await updateJob({ SportsDB, nextJob, log, newStatus: 'processing' });
-        writeFinalLog(log);
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
-        LOG.consoleAndWrite(log, nextMessage, 'red');
-        writeFinalLog(log);
+        log += nextMessage + '\n';
+        LOG.message(nextMessage, 'red');
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
         await cleanup();
+        writeFinalLog(log);
     }
 }
