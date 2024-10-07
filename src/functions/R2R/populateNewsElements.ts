@@ -2,6 +2,7 @@ import { AE } from "../../types/AE";
 import { Template } from "../../types/CORE/Template";
 import { DB } from "../../types/DB";
 import fs from 'fs';
+import fixGoogleDriveNarrationPathBug from "../standalone/fixGoogleDriveNarrationPathBug";
 
 /**
  * There are 5 news items
@@ -99,9 +100,13 @@ export function populateNewsElements(
                                         '$item_specific_sport_name',
                                         newsItem.sport_name
                                     );
+                                    fixGoogleDriveNarrationPathBug(folderPath);
                                     const filePath = `${folderPathWithSportName}/${value}`;
+
                                     if (!fs.existsSync(filePath))
                                         throw `File path does not exist: ${filePath}`;
+
+
 
                                     const method = action.method as AE.Method.Resize;
 
