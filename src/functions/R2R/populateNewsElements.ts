@@ -20,8 +20,10 @@ export function populateNewsElements(
     files: AE.Json.FileImport[],
     trimSyncData: AE.Json.TS.Sequence,
     targetDate: Date,
-){
+): string {
     const funcName = 'populateNewsElements';
+
+    let log = '';
     try {
         const elementNames = newsItemsElements.map(
             (element) => element.element_name
@@ -100,13 +102,11 @@ export function populateNewsElements(
                                         '$item_specific_sport_name',
                                         newsItem.sport_name
                                     );
-                                    fixGoogleDriveNarrationPathBug(folderPath);
+                                    log += fixGoogleDriveNarrationPathBug(folderPath);
                                     const filePath = `${folderPathWithSportName}/${value}`;
 
                                     if (!fs.existsSync(filePath))
                                         throw `File path does not exist: ${filePath}`;
-
-
 
                                     const method = action.method as AE.Method.Resize;
 
@@ -194,6 +194,7 @@ export function populateNewsElements(
                 }
             }
         }
+        return log;
     } catch (e) {
         throw `${funcName}: ${e}`
     }

@@ -143,7 +143,7 @@ export default async function process__SNS_AE_News({
          * Here we perform the element-level actions of the news items
          * These actions involve files and texts and insert and trimming actions
          */
-        populateNewsElements(
+        const populateLog: string = populateNewsElements(
             threeFirstItems,
             generalFolderPaths,
             newsItemElements,
@@ -212,7 +212,7 @@ export default async function process__SNS_AE_News({
             dbgLevel
         );
 
-        return `${funcName}: ${JSON.stringify(axiosResponse.data)}`;
+        return `${funcName}:\npopulateLog:\n${populateLog}\n${JSON.stringify(axiosResponse.data)}`;
     } catch (e) {
         return `${funcName}: ${e}`;
     }
