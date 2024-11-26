@@ -24,14 +24,15 @@ export async function processPayloadWithDBG(
             importBin: 'Imports',
         },
         paths: PATHS.getAll__CORE(subFolders, edition),
-        dbg: {
-            dbgLevel,
-            saveExportClose: {
-                isSave: dbgLevel > -7,
-                isExport: dbgLevel > -7,
-                isClose: dbgLevel > -7,
-            },
-        },
+        // dbg: {
+        dbgLevel,
+            // saveExportClose: {
+            //     isSave: dbgLevel > -7,
+            //     isExport: dbgLevel > -7,
+            //     isClose: dbgLevel > -7,
+            // },
+        // },
+        aeRenderTamplates: [],
     };
 
     for (let text of payload.texts) {

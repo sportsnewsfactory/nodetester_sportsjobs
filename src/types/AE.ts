@@ -71,7 +71,9 @@ export namespace AE {
                 importBin: string; // the bin to import the files into
             };
             paths: AbsolutePath.Obj; //
-            dbg: DebugData; // DebugData;
+            // dbg: DebugData; // DebugData;
+            dbgLevel: number;
+            aeRenderTamplates: string[];
         };
 
         export type FileImport = {
