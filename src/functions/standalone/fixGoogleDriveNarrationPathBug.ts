@@ -8,7 +8,7 @@ import fs from 'fs';
  * and move whatever files are in the folder or folders with parentheses 
  * to the folder without parentheses and delete the folders with parentheses
  */
-export default function fixGoogleDriveNarrationPathBug(folderPath: string): string {
+export function fixGoogleDriveNarrationPathBug(folderPath: string): string {
     const funcName = 'fixGoogleDriveNarrationPathBug';
     let log = '';
 

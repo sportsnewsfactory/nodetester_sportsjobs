@@ -2,7 +2,7 @@ import { AE } from "../../types/AE";
 import { Template } from "../../types/CORE/Template";
 import { DB } from "../../types/DB";
 import fs from 'fs';
-import fixGoogleDriveNarrationPathBug from "../standalone/fixGoogleDriveNarrationPathBug";
+import { fixGoogleDriveNarrationPathBug}  from "../standalone/fixGoogleDriveNarrationPathBug";
 
 /**
  * There are 5 news items
@@ -146,6 +146,7 @@ export function populateNewsElements(
                                     // console.warn(`Target date: ${targetDate}\ndateFolderName: ${dateFolderName}`);
                                     //@ts-ignore
                                     const folderPath = `${generalFolderPaths.narration}${newsItem.sport_name}/${newsItem.lang}/${dateFolderName}`;
+                                    log += fixGoogleDriveNarrationPathBug(folderPath);
                                     const filePath = `${folderPath}/${value}`;
                                     if (!fs.existsSync(filePath))
                                         throw `File path does not exist: ${filePath}`;

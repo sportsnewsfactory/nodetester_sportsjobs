@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'victor server',
+      name: 'sports job listener',
       script: './build/index.js',
       watch: true, // Enable watching for changes
       env: {
