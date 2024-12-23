@@ -14,6 +14,7 @@ import writeFinalLog from './functions/log/writeFinalLog';
 import { AE } from '../types/AE';
 import updateJob from './functions/db/updateJob';
 import { TABLES } from '../config/TABLES';
+import fs from 'fs';
 
 export default async function SERVER_MAIN(){
     const funcName = `SERVER_MAIN`;
@@ -30,19 +31,35 @@ export default async function SERVER_MAIN(){
 
     try {
         // will be used to check if system is busy
-        const systemBusy = false;
+        const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
+        // create systemBusy file if it doesn't exist
+        if (!fs.existsSync(systemBusyFilePath))
+            fs.writeFileSync(systemBusyFilePath, 'false');
+        
+        // check if system is busy
+        let systemBusy = fs.readFileSync(systemBusyFilePath).toString() === 'true';
         if (systemBusy){ 
             nextMessage = `System is busy`;
             LOG.message(nextMessage, 'yellow');
             log += nextMessage + '\n';
-            return true; 
+            return true;
         }
 
         const freshJobs: AE.Job[] = await SportsDB.SELECT(
             TABLES.jobs, {whereClause: { status: 'fresh' }}
         );
 
+        if (freshJobs.length === 0){
+            nextMessage = `No fresh jobs found`;
+            LOG.message(nextMessage, 'yellow');
+            log += nextMessage + '\n';
+            return true;
+        }
+
         for (const job of freshJobs){
+            // write systemBusy file
+            fs.writeFileSync(systemBusyFilePath, 'true');
+
             try {
                 nextMessage = `Next job: ${job.brand_name} ${job.product_name} ${job.lang}`;
                 log += nextMessage + '\n';
@@ -84,6 +101,9 @@ export default async function SERVER_MAIN(){
                 log += nextMessage + '\n';
                 LOG.message(nextMessage, 'red');
             }
+
+            // write systemBusy file
+            fs.writeFileSync(systemBusyFilePath, 'false');
         }
 
     } catch (e) {
