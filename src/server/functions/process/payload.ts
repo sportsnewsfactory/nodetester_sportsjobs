@@ -42,10 +42,11 @@ export async function processPayloadWithDBG(
 
     const jsoned = JSON.stringify(payload).replace(/\\\\/g, '/');
 
-    const axiosResponse = await axios.post(
-        `http://localhost:${PORT}${API_Endpoint}`,
-        { stringifiedJSON: jsoned }
-    );
+    const URL = `http://localhost:${PORT}${API_Endpoint}`;
+
+    // console.log(`%cURL: ${URL}`, 'color: pink');
+
+    const axiosResponse = await axios.post(URL, { stringifiedJSON: jsoned });
 
     return axiosResponse;
 }
