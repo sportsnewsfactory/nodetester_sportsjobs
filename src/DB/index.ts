@@ -90,14 +90,15 @@ async function removeHIBasketBallItem(
          * We'll look at the original basketball items to verify
          * we're not accidentally deleting more than one.
          */
-       
         const originalBasketballItems: {id: string}[] = await SportsDB.SELECT('Basketball.RAPID__NEWS');
+        if (originalBasketballItems.length === 0) throw `No original basketball items found`;
         const todaysBasketballItems = originalBasketballItems.filter(
             item => item.id.includes(targetDate)
         );
 
         const basketballItems: TransNewsItem[] = 
             await SportsDB.SELECT(TransNewsTables.Basketball);
+        if (basketballItems.length === 0) throw `No basketball items found`;
 
         const hiBasketballItems = basketballItems.filter(item => item.lang === 'HI');
         if (hiBasketballItems.length === 0) throw `No HI basketball items found`;
@@ -106,7 +107,7 @@ async function removeHIBasketBallItem(
             throw `HI basketball items count doesn't match original items count: HI ${hiBasketballItems.length} vs EN ${todaysBasketballItems.length}`;
 
         // start from the last item
-        for (let i = hiBasketballItems.length; i > 0; i--){
+        for (let i = hiBasketballItems.length - 1; i >= 0; i--){
             const item = hiBasketballItems[i];
             const enOriginal = basketballItems.find(
                 bItem => bItem.item_id === item.item_id && 
@@ -137,6 +138,8 @@ async function removeHIBasketBallItem(
         console.warn(`All basketball items have been translated into HI`);
         return false;
     } catch (e) {
-        throw `removeHIBasketBallItem: ${e}`;
+        // throw `removeHIBasketBallItem: ${e}`;
+        console.warn(`removeHIBasketBallItem: ${e}`);
+        return false;
     }
 }
