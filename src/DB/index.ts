@@ -21,7 +21,7 @@ export default async function reorganizeTransNews(){
 
         const removedHIBBItem: boolean = await removeHIBasketBallItem(SportsDB, targetDate);
         console.log(`Removed HI basketball item status: ${removedHIBBItem}`);
-
+        // throw `removeHIBasketBallItem`;
         /**
          * With the Cricket items it's much simpler.
          * We only need the single HI item.
@@ -32,7 +32,10 @@ export default async function reorganizeTransNews(){
 
         for (let item of cricketTransItems){
             if (item.lang !== 'HI'){
-                const result: boolean = await SportsDB.DELETE(TransNewsTables.Cricket, {whereClause: {item_id: item.item_id}});
+                const deleteSQL = `DELETE FROM ${TransNewsTables.Cricket} WHERE item_id = '${item.item_id}' AND lang = '${item.lang}'`;
+                const resultPackage = await SportsDB.pool.query(deleteSQL);
+                const result: boolean = (resultPackage[0] as any).affectedRows > 0;
+                // const result: boolean = await SportsDB.DELETE(TransNewsTables.Cricket, {whereClause: {item_id: item.item_id}});
                 if (!result) throw `Failed to delete ${item.lang} cricket item ${item.item_id}`;
                 console.log(`Deleted ${item.lang} cricket item ${item.item_id}`);
             }
@@ -70,7 +73,10 @@ async function deleteIrrelevantItems(SportsDB: MYSQL_DB, targetDate: string){
             if (items.length === 0) continue;
             for (let item of items){
                 if (!item.item_id.includes(targetDate)){
-                    const result: boolean = await SportsDB.DELETE(transNewsTable, {whereClause: {item_id: item.item_id}});
+                    // const result: boolean = await SportsDB.DELETE(transNewsTable, {whereClause: {item_id: item.item_id}});
+                    const deleteSQL = `DELETE FROM ${transNewsTable} WHERE item_id = '${item.item_id}'`;
+                    const resultPackage = await SportsDB.pool.query(deleteSQL);
+                    const result: boolean = (resultPackage[0] as any).affectedRows > 0;
                     if (!result) throw `Failed to delete irrelevant ${item.lang} ${sport} item ${item.item_id}`;
                     console.log(`Deleted irrelevant ${item.lang} ${sport} item ${item.item_id}`);
                 }
@@ -121,7 +127,10 @@ async function removeHIBasketBallItem(
                 item.narration !== enOriginal.narration;
 
             if (!hasBeenTranslated){
-                const result: boolean = await SportsDB.DELETE(TransNewsTables.Basketball, {whereClause: {item_id: item.item_id}});
+                // const result: boolean = await SportsDB.DELETE(TransNewsTables.Basketball, {whereClause: {item_id: item.item_id}});
+                const deleteSQL = `DELETE FROM ${TransNewsTables.Basketball} WHERE item_id = '${item.item_id}' AND lang = 'HI'`;
+                const resultPackage = await SportsDB.pool.query(deleteSQL);
+                const result: boolean = (resultPackage[0] as any).affectedRows > 0;
                 if (!result) throw `Failed to delete HI basketball item ${item.item_id}`;
                 console.log(`Deleted HI basketball item ${item.item_id}`);
                 return true;
