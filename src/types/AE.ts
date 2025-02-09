@@ -73,7 +73,7 @@ export namespace AE {
             paths: AbsolutePath.Obj; //
             // dbg: DebugData; // DebugData;
             dbgLevel: number;
-            aeRenderTamplates: string[];
+            aeRenderSeq: string[];
         };
 
         export type FileImport = {

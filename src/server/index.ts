@@ -29,9 +29,11 @@ export default async function SERVER_MAIN(){
     const SportsDB = new MYSQL_DB(); SportsDB.createPool('SPORTS');
     const BackofficeDB = new MYSQL_DB(); BackofficeDB.createPool('BACKOFFICE');
 
+    // will be used to check if system is busy
+    const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
+
     try {
-        // will be used to check if system is busy
-        const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
+        
         // create systemBusy file if it doesn't exist
         if (!fs.existsSync(systemBusyFilePath))
             fs.writeFileSync(systemBusyFilePath, 'false');
@@ -69,6 +71,8 @@ export default async function SERVER_MAIN(){
                 const brand: CORE.Brand = await getBrand(SportsDB, job.brand_name);
                 const product: CORE.Product = await getProduct(SportsDB, job.product_name);
                 
+                // throw JSON.stringify(edition, null, 4);
+
                 let processProps: GenericProcessProps = {
                     SportsDB, BackofficeDB, brand, edition, product, dbgLevel: 1
                 };
@@ -101,17 +105,15 @@ export default async function SERVER_MAIN(){
                 log += nextMessage + '\n';
                 LOG.message(nextMessage, 'red');
             }
-
-            // write systemBusy file
-            fs.writeFileSync(systemBusyFilePath, 'false');
         }
-
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
         log += nextMessage + '\n';
         LOG.message(nextMessage, 'red');
     } finally {
+        // write systemBusy file
+        fs.writeFileSync(systemBusyFilePath, 'false');
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
         await cleanup();

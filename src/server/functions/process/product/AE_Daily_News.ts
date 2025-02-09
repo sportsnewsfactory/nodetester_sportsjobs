@@ -90,6 +90,8 @@ export default async function process__AE_Daily_News({
             targetDate
         });
 
+        // throw JSON.stringify(newsItems, null, 4);
+
         const dailyPresenterFilePaths: DailyPresenterScheme = 
             await getDailyPresenterScheme(SportsDB, edition, targetDate, subFolders.presenters);
         

@@ -32,7 +32,7 @@ export async function processPayloadWithDBG(
             //     isClose: dbgLevel > -7,
             // },
         // },
-        aeRenderTamplates: [],
+        aeRenderSeq: [],
     };
 
     for (let text of payload.texts) {
