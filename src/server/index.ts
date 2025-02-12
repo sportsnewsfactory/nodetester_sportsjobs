@@ -98,7 +98,7 @@ export default async function SERVER_MAIN(){
                 log += nextMessage + '\n';
                 LOG.message(nextMessage, 'green');
 
-                await updateJob({ SportsDB, nextJob: job, log, newStatus: 'processing' });
+                await updateJob({ SportsDB, nextJob: job, log, newStatus: 'archive' });
             } catch (e) {
                 // handle error
                 nextMessage = `${job.brand_name} ${job.lang} ${job.product_name} failed @ ${getTimestamp()} with error: ${e}`;
