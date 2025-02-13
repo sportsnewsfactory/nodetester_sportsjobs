@@ -32,16 +32,23 @@ const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
 export default async function SERVER_MAIN(logToConsole: boolean = true) {
     const funcName = `SERVER_MAIN`;
 
-    // init databases
+    /**
+     * Initialize the databases,
+     * TimeDeltas, logFile and renderMachine.
+     */
     const SportsDB = new MYSQL_DB();
     SportsDB.createPool('SPORTS');
     const BackofficeDB = new MYSQL_DB();
     BackofficeDB.createPool('BACKOFFICE');
 
+    const RM = await identifyRenderMachine(SportsDB);
     const TD = new TimeDeltas();
     const nowYYYYMMDDhhmmss = TD.formatYYYYMMDDhhmmss(new Date());
     const logFileName = `test ${nowYYYYMMDDhhmmss}.txt`;
 
+    /**
+     * Log first message to the log file.
+     */
     let nextMessage = `Started test @ ${nowYYYYMMDDhhmmss}`;
     appendToLogFile(TD, nextMessage, logFileName, logToConsole, 'pink');
 
@@ -69,6 +76,7 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                 for (const job of freshJobs) {
                     try {
                         await editSingleFreshJob(
+                            RM,
                             TD,
                             job,
                             SportsDB,
@@ -103,6 +111,7 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                 for (const job of editedJobs) {
                     try {
                         await renderSingleEditedJob(
+                            RM,
                             TD,
                             job,
                             SportsDB,
@@ -129,6 +138,7 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 }
 
 async function editSingleFreshJob(
+    RM: DB.RenderMachine,
     TD: TimeDeltas,
     job: AE.Job,
     SportsDB: MYSQL_DB,
@@ -226,6 +236,7 @@ async function editSingleFreshJob(
 }
 
 async function renderSingleEditedJob(
+    RM: DB.RenderMachine,
     TD: TimeDeltas,
     job: AE.Job,
     SportsDB: MYSQL_DB,
