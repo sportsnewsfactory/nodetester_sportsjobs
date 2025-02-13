@@ -50,16 +50,7 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
         if (!fs.existsSync(systemBusyFilePath))
             fs.writeFileSync(systemBusyFilePath, 'false');
 
-        
-
-        // check if system is busy
-        let systemBusy =
-            fs.readFileSync(systemBusyFilePath).toString() === 'true';
-        if (systemBusy) {
-            nextMessage = `System is busy`;
-            appendToLogFile(nextMessage, logFileName, logToConsole, 'yellow');
-            return true;
-        }
+        checkIfSystemIsBusy();
 
         const goOverFreshJobs = async () => {
             const freshJobs: AE.Job[] = await SportsDB.SELECT(TABLES.jobs, {
@@ -71,9 +62,11 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                 appendToLogFile(nextMessage, logFileName, logToConsole, 'orange')
                 // return true;
             } else {
+                throw `first freshJob:\n\n${JSON.stringify(freshJobs[0])}`;
+
                 for (const job of freshJobs) {
                     try {
-                        await editSingleFreshJob(job, SportsDB, BackofficeDB);
+                        await editSingleFreshJob(job, SportsDB, BackofficeDB, logFileName);
                     } catch (e) {
                         LOG.message(`${e}`, 'red');
                     }
@@ -98,7 +91,8 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                         await renderSingleEditedJob(
                             job,
                             SportsDB,
-                            BackofficeDB
+                            BackofficeDB,
+                            logFileName
                         );
                     } catch (e) {
                         LOG.message(`${e}`, 'red');
@@ -122,7 +116,8 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 async function editSingleFreshJob(
     job: AE.Job,
     SportsDB: MYSQL_DB,
-    BackofficeDB: MYSQL_DB
+    BackofficeDB: MYSQL_DB,
+    logFileName: string,
 ): Promise<void> {
     const funcName = `processSingleFreshJob`;
 
@@ -217,14 +212,9 @@ async function editSingleFreshJob(
 async function renderSingleEditedJob(
     job: AE.Job,
     SportsDB: MYSQL_DB,
-    BackofficeDB: MYSQL_DB
+    BackofficeDB: MYSQL_DB,
+    logFileName: string
 ) {
-    const TD = new TimeDeltas();
-
-    const logFileName = `test ${TD.formatYYYYMMDD(
-        TD.now
-    )} ${TD.now.getTime()}.txt`;
-
     try {
         // write the initial log message into a new log file
         appendToLogFile('Test started', logFileName);
@@ -315,4 +305,10 @@ async function renderSingleEditedJob(
         console.warn(errorMessage);
         appendToLogFile(errorMessage, logFileName);
     }
+}
+
+function checkIfSystemIsBusy(){
+    let systemBusy =
+        fs.readFileSync(systemBusyFilePath).toString() === 'true';
+    if (systemBusy) throw `System is busy`;
 }
