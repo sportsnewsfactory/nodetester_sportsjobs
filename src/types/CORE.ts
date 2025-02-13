@@ -1,10 +1,10 @@
-import { DB } from "./DB";
+import { DB } from './DB';
 
 export namespace CORE {
     /**
      * We start with the types and move on to namespaces
      */
-    
+
     export type FolderType = {
         name: string;
         scope: Keys.Scope;
@@ -42,7 +42,7 @@ export namespace CORE {
         type: string;
         mixed: boolean;
         sports: DB.SportName[];
-    }
+    };
 
     export type Edition = {
         sport: string;
@@ -56,33 +56,34 @@ export namespace CORE {
         project_file_name: string;
         project_save_file_name: string;
     };
-    
+
     export namespace Keys {
-        export type JobStatus = 'fresh' | 'processing' | 'exported' | 'uploaded' | 'error' | 'archive';
-        
-        export type ExpectedPathVariables = 
-            | 'sport' 
-            | 'lang' 
-            | 'brand_path' 
+        export type JobStatus =
+            | 'fresh'
+            | 'edited'
+            | 'rendered'
+            | 'qa-ready'
+            | 'qa-pending'
+            | 'archive'
+            | 'uploaded'
+            | 'error';
+
+        export type ExpectedPathVariables =
+            | 'sport'
+            | 'lang'
+            | 'brand_path'
             | 'product_path'
             | 'drive_path'
-            | 'qnap_path'
+            | 'qnap_path';
 
-        export type Software = 
-            | 'AE' 
-            | 'PS';
-        
-        export type FolderPath = 
-            | 'brand'
-            | 'product'
-        
+        export type Software = 'AE' | 'PS';
+
+        export type FolderPath = 'brand' | 'product';
+
         // every product has these subfolders
-        export type ProductSubFolder__Base =
-            | 'saves'
-            | 'exports'
-            | 'templates';
-        
-        export type Product = 
+        export type ProductSubFolder__Base = 'saves' | 'exports' | 'templates';
+
+        export type Product =
             | 'AE_Daily_News'
             | 'SNS_AE_News'
             | 'SNS_AE_Schedule'
@@ -92,11 +93,8 @@ export namespace CORE {
             | 'SNS_PS_Ranking'
             | 'SNS_PS_Scores';
 
-        export type Scope =
-            | 'general'
-            | 'product specific'
-            | 'brand specific';
-            
+        export type Scope = 'general' | 'product specific' | 'brand specific';
+
         export type Lang = 'EN' | 'HI' | 'RO' | 'AR';
 
         export type RootFolder =
@@ -105,39 +103,37 @@ export namespace CORE {
             | 'local_storage_path';
 
         export namespace PS {
-            export type ProductSubFolder = 
+            export type ProductSubFolder =
                 | ProductSubFolder__Base
                 | 'static_backgrounds'
                 | 'logos';
         }
 
         export namespace AE {
-            export type ProductSubFolder = 
+            export type ProductSubFolder =
                 | ProductSubFolder__Base
                 | 'narration'
                 | 'dynamic_backgrounds'
                 | 'presenters';
 
-            export type ExpectedPathVariables = 
+            export type ExpectedPathVariables =
                 | CORE.Keys.ExpectedPathVariables
                 | 'dynamic_backgrounds'
                 | 'logos'
-                | 'narration'
+                | 'narration';
         }
-
-            
     }
 
     export namespace AE {
         export type ProductSubFolder = ProductSubFolder__Base & {
             folder_type: Keys.AE.ProductSubFolder;
-        }
+        };
     }
 
     export namespace PS {
         export type ProductSubFolder = ProductSubFolder__Base & {
             folder_type: Keys.PS.ProductSubFolder;
-        }
+        };
     }
 }
 

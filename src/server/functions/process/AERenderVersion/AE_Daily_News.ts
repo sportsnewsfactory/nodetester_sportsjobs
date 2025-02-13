@@ -25,16 +25,19 @@ import { DB } from '../../../../types/DB';
 import { processPayloadWithDBG } from '../payload';
 import { GenericProcessProps } from '../EDIT';
 import getNewsItemsByEdition from '../../get/newsItemsByEdition';
+import { VictorResult } from './processVictorResult';
+import { processPayloadWithVictorResult } from './processPayloadWithVictorResult';
+import { PATHS } from '../../../../functions/PATHS';
 
-export default async function process__AE_Daily_News({
+export async function process__AE_Daily_News__AERENDER({
     SportsDB,
     BackofficeDB,
     brand,
     edition,
     product,
     dbgLevel = -7,
-}: GenericProcessProps): Promise<string> {
-    const funcName = 'process__AE_Daily_News';
+}: GenericProcessProps): Promise<VictorResult> {
+    const funcName = 'process__AE_Daily_News__AERENDER';
 
     try {
         // const brand_name: string = 'CWINZ';
@@ -49,14 +52,20 @@ export default async function process__AE_Daily_News({
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
 
-        let texts: AE.Json.TextImport[] = [];
-        let files: AE.Json.FileImport[] = [];
-        let trimSyncData: AE.Json.TS.Sequence = [];
+        const payloadCoreData: Omit<
+            AE.Json.Payload,
+            'names' | 'paths' | 'dbgLevel'
+        > = {
+            texts: [],
+            files: [],
+            trimSyncData: [],
+            aeRenderSeq: ['H.264 - Match Render Settings - 40 Mbps'],
+        };
 
         const { introDate, targetDate } = getIntroDate(lang.date_format);
 
         // HARDCODED-MODIFY
-        texts.push({
+        payloadCoreData.texts.push({
             text: introDate,
             textLayerName: 'introdate',
             recursiveInsertion: true,
@@ -149,18 +158,22 @@ export default async function process__AE_Daily_News({
             generalFolderPaths,
             newsItemElements,
             elementActions,
-            texts,
-            files,
-            trimSyncData,
+            payloadCoreData.texts,
+            payloadCoreData.files,
+            payloadCoreData.trimSyncData,
             targetDate
         );
 
-        populateStandingsElements(standingsLists, standingsElements, texts);
+        populateStandingsElements(
+            standingsLists,
+            standingsElements,
+            payloadCoreData.texts
+        );
 
         populateScheduleElements__TESTING(
             scheduleLists,
             scheduleElements,
-            texts,
+            payloadCoreData.texts,
             lang.date_format
         );
 
@@ -174,7 +187,7 @@ export default async function process__AE_Daily_News({
             clusterActions,
             templateClusters,
             elementBluePrints,
-            trimSyncData
+            payloadCoreData.trimSyncData
         );
 
         processTemplateElements(
@@ -182,12 +195,12 @@ export default async function process__AE_Daily_News({
             elementBluePrints,
             elementActions,
             templateName,
-            files,
-            trimSyncData,
+            payloadCoreData.files,
+            payloadCoreData.trimSyncData,
             RAW_DATA
         );
 
-        LEGACY__syncMainCompLayers(trimSyncData);
+        LEGACY__syncMainCompLayers(payloadCoreData.trimSyncData);
 
         // Are we still going with random template?
         // const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
@@ -201,24 +214,56 @@ export default async function process__AE_Daily_News({
             layerOrCompName: '0_Main comp',
             trimToLayer: 'outro',
         };
-        trimSyncData.push(trim);
+        payloadCoreData.trimSyncData.push(trim);
 
-        const axiosResponse = await processPayloadWithDBG(
+        // const axiosResponse = await processPayloadWithDBG(
+        //     files,
+        //     texts,
+        //     trimSyncData,
+        //     subFolders,
+        //     edition,
+        //     PORT,
+        //     API_Endpoint,
+        //     lang.allowed_chars,
+        //     dbgLevel
+        // );
+
+        const { files, texts, trimSyncData, aeRenderSeq } = payloadCoreData;
+
+        // const paths = {
+        //     exportFile: `E:/GivTrade EN folder/AE/`,
+        //     projectFile: `E:/GivTrade EN folder/AE/GivTrade EN backup.aep`,
+        //     projectSaveFile: `E:/GivTrade EN folder/AE/GivTrade EN backup.mp4`,
+        // };
+
+        // const paths = {
+        //     exportFile: subFolders.exports,
+        //     projectFile: subFolders.templates,
+        //     projectSaveFile: subFolders.exports,
+        // };
+
+        const paths = PATHS.getAll__CORE(subFolders, edition);
+
+        const victorResult: VictorResult = await processPayloadWithVictorResult(
             files,
             texts,
             trimSyncData,
-            subFolders,
-            edition,
             PORT,
             API_Endpoint,
-            lang.allowed_chars,
-            dbgLevel
+            dbgLevel,
+            paths,
+            'Imports',
+            '0_Main comp',
+            aeRenderSeq
         );
 
-        return `${funcName}:\npopulateLog:\n${populateLog}\n${JSON.stringify(
-            axiosResponse.data
-        )}`;
+        console.log(
+            `%c${JSON.stringify(victorResult, null, 4)}`,
+            'color: yellow'
+        );
+
+        return victorResult;
     } catch (e) {
-        return `${funcName}: ${e}`;
+        throw `${funcName}: ${e}`;
     }
 }

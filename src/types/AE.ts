@@ -1,11 +1,15 @@
-import { CORE } from "./CORE";
-import { DB } from "./DB";
+import { CORE } from './CORE';
+import { DB } from './DB';
 
 /**
  * Here we define the final JSON data that
  * needs to be sent to the AE extension
  */
 export namespace AE {
+    export type RenderTemplate =
+        | 'transMov'
+        | 'H.264 - Match Render Settings - 40 Mbps';
+
     export namespace Method {
         export type Trim =
             | 'trimByAudio'
@@ -73,7 +77,7 @@ export namespace AE {
             paths: AbsolutePath.Obj; //
             // dbg: DebugData; // DebugData;
             dbgLevel: number;
-            aeRenderSeq: string[];
+            aeRenderSeq: RenderTemplate[];
         };
 
         export type FileImport = {

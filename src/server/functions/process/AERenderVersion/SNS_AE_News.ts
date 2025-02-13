@@ -1,69 +1,67 @@
 import { CORE } from '../../../../types/CORE';
+import { DB } from '../../../../types/DB';
+import { getLang } from '../../../../functions/getLang';
 import { coreTables } from '../../../../constants/coreTables';
 import { TMPTables } from '../../../../constants/templateTables';
 import { filterElements } from '../../../../functions/filterElements';
 import { getIntroDate } from '../../../../functions/getIntroDate';
-import { getLang } from '../../../../functions/getLang';
-import { getStandingsScheduleLists } from '../../../../functions/getStandingsScheduleLists';
 import identifyRenderMachine from '../../../../functions/identifyRenderMachine';
-import {
-    DailyPresenterScheme,
-    getDailyPresenterScheme,
-} from '../../../../functions/Presenters';
 import { getGeneralPaths } from '../../../../functions/R2R/components/getGeneralPaths';
 import { getSubfolderStrucure } from '../../../../functions/R2R/components/getSubfolderStructure';
 import { populateNewsElements } from '../../../../functions/R2R/populateNewsElements';
-import { populateScheduleElements__TESTING } from '../../../../functions/R2R/populateScheduleElementsCWINZexperiment';
-import { populateStandingsElements } from '../../../../functions/R2R/populateStandingsElements';
-import { LEGACY__syncMainCompLayers } from '../../../../functions/R2R/process/LEGACY__mainLayers';
+import { LEGACY__syncMainCompLayersSNS } from '../../../../functions/R2R/process/LEGACY__mainLayersSNS';
 import { newsClusterLevel } from '../../../../functions/R2R/process/newsClusterLevel';
-import { processTemplateElements } from '../../../../functions/R2R/process/templateElements';
+import { processTemplateElementsNoPresenters } from '../../../../functions/R2R/process/templateElementsNoPresenters';
 import { AE } from '../../../../types/AE';
 import { Paths } from '../../../../types/CORE/Paths';
 import { Template } from '../../../../types/CORE/Template';
-import { DB } from '../../../../types/DB';
-import { processPayloadWithDBG } from '../payload';
 import { GenericProcessProps } from '../EDIT';
 import getNewsItemsByEdition from '../../get/newsItemsByEdition';
+import { VictorResult } from './processVictorResult';
+import { processPayloadWithVictorResult } from './processPayloadWithVictorResult';
+import { PATHS } from '../../../../functions/PATHS';
 
-export default async function process__AE_Daily_News({
+export async function process__SNS_AE_News__AERENDER({
     SportsDB,
     BackofficeDB,
     brand,
     edition,
     product,
     dbgLevel = -7,
-}: GenericProcessProps): Promise<string> {
-    const funcName = 'process__AE_Daily_News';
+}: GenericProcessProps): Promise<VictorResult> {
+    const funcName = 'process__SNS_AE_News__AERENDER';
 
     try {
-        // const brand_name: string = 'CWINZ';
-        // const product_name: CORE.Keys.Product = 'AE_Daily_News';
-        // const langCode: string = 'AR';
         const lang: DB.Lang = await getLang(SportsDB, edition.lang);
         const renderMachine: DB.RenderMachine = await identifyRenderMachine(
             SportsDB
         );
+        const sportName: DB.SportName = 'Basketball';
         const templateName: string = 'mixed-sports1';
 
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
 
-        let texts: AE.Json.TextImport[] = [];
-        let files: AE.Json.FileImport[] = [];
-        let trimSyncData: AE.Json.TS.Sequence = [];
-
+        const payloadCoreData: Omit<
+            AE.Json.Payload,
+            'names' | 'paths' | 'dbgLevel'
+        > = {
+            texts: [],
+            files: [],
+            trimSyncData: [],
+            aeRenderSeq: ['H.264 - Match Render Settings - 40 Mbps'],
+        };
         const { introDate, targetDate } = getIntroDate(lang.date_format);
 
         // HARDCODED-MODIFY
-        texts.push({
+        payloadCoreData.texts.push({
             text: introDate,
             textLayerName: 'introdate',
             recursiveInsertion: true,
         });
 
         // const {brand, edition, product} =
-        //     await getBrandEditionProduct(SportsDB, brand_name, product_name, langCode);
+        //     await getBrandEditionProduct(SportsDB, brand_name, product_name, langCode, sportName);
 
         const generalFolderPaths: Paths.GeneralFolders = await getGeneralPaths(
             renderMachine,
@@ -87,42 +85,75 @@ export default async function process__AE_Daily_News({
             generalFolderPaths
         );
 
-        // const templateMainLayers = await BackofficeDB.SELECT(TMPTables.templateMainLayers, {whereClause: {template_name: templateName}});
-        const templateClusters: Template.Record.Cluster[] =
+        const templateMainLayers = await BackofficeDB.SELECT(
+            TMPTables.templateMainLayers,
+            { whereClause: { template_name: templateName } }
+        );
+        let templateClusters: Template.Record.Cluster[] =
             await BackofficeDB.SELECT(TMPTables.templateClusters, {
                 whereClause: { template_name: templateName },
             });
-        const templateElements: Template.Record.Element[] =
+
+        // HARDCODED-MODIFY
+        // removing manually the second cluster
+        templateClusters = templateClusters.filter(
+            (t) => t.cluster_index === 1
+        );
+
+        let templateElements: Template.Record.Element[] =
             await BackofficeDB.SELECT(TMPTables.templateElements, {
                 whereClause: { template_name: templateName },
             });
+        // HARDCODED-MODIFY
+        // removing manually presenter elements
+        templateElements = templateElements.filter(
+            (t) => t.element_name !== 'presenter'
+        );
+
         const objectElements: Template.Obj.Element[] =
             await BackofficeDB.SELECT(TMPTables.objectElements);
         const elementBluePrints: Template.Element.DB_Blueprint[] =
             await BackofficeDB.SELECT(TMPTables.elements);
-        // const objects: Template.Obj[] = await BackofficeDB.SELECT(TMPTables.objects);
+        const objects: Template.Obj[] = await BackofficeDB.SELECT(
+            TMPTables.objects
+        );
         const elementActions: Template.Element.Action[] =
             await BackofficeDB.SELECT(TMPTables.elementActions);
         const clusterActions: Template.Cluster.Action[] =
             await BackofficeDB.SELECT(TMPTables.clusterActions);
 
-        // new newsItems fetching method 050924
+        /**
+         * We'll start with getting our raw data
+         * then we will manipulate the data to fit the actions scheme
+         * and then we'll export a sample json file.
+         */
+        // const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} =
+        //     await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, edition.lang);
+
+        // console.log(JSON.stringify(allNewsItems.Basketball, null, 4));
+
+        // console.log(Object.keys(allNewsItems).join(', '))
+        // return;
+
+        /**
+         * @param newsItems and @param presenterFiles
+         * contain all of the raw data we need
+         */
         const newsItems: DB.Item.JoinedNews[] = await getNewsItemsByEdition({
             DB: SportsDB,
             edition,
             lang,
             targetDate,
         });
+        // const newsItems: DB.Item.JoinedNews[] =
+        //     await selectMixedNews(allNewsItems);
+        // console.log(`newsItems: ${JSON.stringify(newsItems, null, 4)}`);
+        // return;
 
-        // throw JSON.stringify(newsItems, null, 4);
-
-        const dailyPresenterFilePaths: DailyPresenterScheme =
-            await getDailyPresenterScheme(
-                SportsDB,
-                edition,
-                targetDate,
-                subFolders.presenters
-            );
+        // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
+        // return;
+        // const dailyPresenterFilePaths: DailyPresenterScheme =
+        //     await getDailyPresenterScheme(SportsDB, edition, targetDate, subFolders.presenters);
 
         /**
          * CONVERT LAYER TO SOURCES IN DB
@@ -130,39 +161,34 @@ export default async function process__AE_Daily_News({
          * the formula to get to the filepath must be in the DB
          * This is another BIG STEP
          */
-        let RAW_DATA = {
-            presenter: dailyPresenterFilePaths,
-        };
+        // let RAW_DATA = {
+        //     presenter: dailyPresenterFilePaths,
+        // }
 
         const { newsItemElements, standingsElements, scheduleElements } =
             filterElements(objectElements, elementBluePrints);
 
-        const { standingsLists, scheduleLists } =
-            await getStandingsScheduleLists(SportsDB, newsItems);
+        const threeFirstItems = newsItems.slice(0, 3);
 
         /**
          * Here we perform the element-level actions of the news items
          * These actions involve files and texts and insert and trimming actions
          */
         const populateLog: string = populateNewsElements(
-            newsItems,
+            threeFirstItems,
             generalFolderPaths,
             newsItemElements,
             elementActions,
-            texts,
-            files,
-            trimSyncData,
+            payloadCoreData.texts,
+            payloadCoreData.files,
+            payloadCoreData.trimSyncData,
             targetDate
         );
 
-        populateStandingsElements(standingsLists, standingsElements, texts);
+        // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);
+        // console.log(`files: ${JSON.stringify(files, null, 4)}`);
 
-        populateScheduleElements__TESTING(
-            scheduleLists,
-            scheduleElements,
-            texts,
-            lang.date_format
-        );
+        // return;
 
         /**
          * Now we want to perform the cluster-level actions.
@@ -174,20 +200,22 @@ export default async function process__AE_Daily_News({
             clusterActions,
             templateClusters,
             elementBluePrints,
-            trimSyncData
+            payloadCoreData.trimSyncData
         );
 
-        processTemplateElements(
+        processTemplateElementsNoPresenters(
             templateElements,
             elementBluePrints,
             elementActions,
             templateName,
-            files,
-            trimSyncData,
-            RAW_DATA
+            payloadCoreData.files,
+            payloadCoreData.trimSyncData
         );
 
-        LEGACY__syncMainCompLayers(trimSyncData);
+        // console.log(`trimSyncData: ${JSON.stringify(trimSyncData, null, 4)}`);
+        // return;
+
+        LEGACY__syncMainCompLayersSNS(payloadCoreData.trimSyncData);
 
         // Are we still going with random template?
         // const templateFolderContent: string[] = fs.readdirSync(subFolders.templates);
@@ -201,24 +229,48 @@ export default async function process__AE_Daily_News({
             layerOrCompName: '0_Main comp',
             trimToLayer: 'outro',
         };
-        trimSyncData.push(trim);
+        payloadCoreData.trimSyncData.push(trim);
 
-        const axiosResponse = await processPayloadWithDBG(
+        // const axiosResponse = await processPayloadWithDBG(
+        //     payloadCoreData.files,
+        //     payloadCoreData.texts,
+        //     payloadCoreData.trimSyncData,
+        //     subFolders,
+        //     edition,
+        //     PORT,
+        //     API_Endpoint,
+        //     lang.allowed_chars,
+        //     dbgLevel
+        // );
+
+        // return `${funcName}:\npopulateLog:\n${populateLog}\n${JSON.stringify(
+        //     axiosResponse.data
+        // )}`;
+
+        const { files, texts, trimSyncData, aeRenderSeq } = payloadCoreData;
+
+        const paths = PATHS.getAll__CORE(subFolders, edition);
+
+        const victorResult: VictorResult = await processPayloadWithVictorResult(
             files,
             texts,
             trimSyncData,
-            subFolders,
-            edition,
             PORT,
             API_Endpoint,
-            lang.allowed_chars,
-            dbgLevel
+            dbgLevel,
+            paths,
+            'Imports',
+            '0_Main comp',
+            aeRenderSeq
         );
 
-        return `${funcName}:\npopulateLog:\n${populateLog}\n${JSON.stringify(
-            axiosResponse.data
-        )}`;
+        console.log(
+            `%c${JSON.stringify(victorResult, null, 4)}`,
+            'color: yellow'
+        );
+
+        return victorResult;
     } catch (e) {
-        return `${funcName}: ${e}`;
+        throw `${funcName}: ${e}`;
     }
 }

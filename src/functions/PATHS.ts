@@ -31,7 +31,7 @@ export const PATHS = {
         return paths;
     },
     getAll__CORE(
-        subFolders: {[key in CORE.Keys.AE.ProductSubFolder]: string},
+        subFolders: { [key in CORE.Keys.AE.ProductSubFolder]: string },
         edition: CORE.Edition
     ): AE.Json.AbsolutePath.Obj {
         const paths: AE.Json.AbsolutePath.Obj = {

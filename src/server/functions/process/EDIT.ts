@@ -1,6 +1,6 @@
 import { CORE } from '../../../types/CORE';
-import process__AE_Daily_News from './product/AE_Daily_News';
-import process__SNS_AE_News from './product/SNS_AE_News';
+import { process__AE_Daily_News__AERENDER } from './AERenderVersion/AE_Daily_News';
+import { process__SNS_AE_News__AERENDER } from './AERenderVersion/SNS_AE_News';
 
 export type GenericProcessProps = {
     SportsDB: any;
@@ -12,9 +12,9 @@ export type GenericProcessProps = {
 };
 
 //@ts-ignore
-export const PROCESS: { [key in CORE.Keys.Product]: Function } = {
-    AE_Daily_News: process__AE_Daily_News,
-    SNS_AE_News: process__SNS_AE_News,
+export const EDIT: { [key in CORE.Keys.Product]: Function } = {
+    AE_Daily_News: process__AE_Daily_News__AERENDER,
+    SNS_AE_News: process__SNS_AE_News__AERENDER,
     // SNS_AE_Schedule: process__SNS_AE_Schedule,
     // SNS_AE_Ranking: process__SNS_AE_Ranking,
     // SNS_PS_Schedule: process__SNS_PS_Schedule,

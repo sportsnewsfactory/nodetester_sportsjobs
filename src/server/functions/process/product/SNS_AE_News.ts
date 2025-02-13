@@ -20,31 +20,35 @@ import { AE } from '../../../../types/AE';
 import { Paths } from '../../../../types/CORE/Paths';
 import { Template } from '../../../../types/CORE/Template';
 import { processPayloadWithDBG } from '../payload';
-import { GenericProcessProps } from '../PROCESS';
+import { GenericProcessProps } from '../EDIT';
 import getNewsItemsByEdition from '../../get/newsItemsByEdition';
 
 export default async function process__SNS_AE_News({
-    SportsDB, BackofficeDB,
-    brand, edition, product,
-    dbgLevel = -7
-}: GenericProcessProps): Promise<string> {    
-    
+    SportsDB,
+    BackofficeDB,
+    brand,
+    edition,
+    product,
+    dbgLevel = -7,
+}: GenericProcessProps): Promise<string> {
     const funcName = 'process__SNS_AE_News';
 
     try {
         const lang: DB.Lang = await getLang(SportsDB, edition.lang);
-        const renderMachine: DB.RenderMachine = await identifyRenderMachine(SportsDB);
+        const renderMachine: DB.RenderMachine = await identifyRenderMachine(
+            SportsDB
+        );
         const sportName: DB.SportName = 'Basketball';
         const templateName: string = 'mixed-sports1';
 
         const PORT = 9411;
         const API_Endpoint = '/api/extboiler/';
-        
+
         let texts: AE.Json.TextImport[] = [];
         let files: AE.Json.FileImport[] = [];
         let trimSyncData: AE.Json.TS.Sequence = [];
 
-        const {introDate, targetDate} = getIntroDate(lang.date_format);
+        const { introDate, targetDate } = getIntroDate(lang.date_format);
 
         // HARDCODED-MODIFY
         texts.push({
@@ -53,48 +57,74 @@ export default async function process__SNS_AE_News({
             recursiveInsertion: true,
         });
 
-        // const {brand, edition, product} = 
+        // const {brand, edition, product} =
         //     await getBrandEditionProduct(SportsDB, brand_name, product_name, langCode, sportName);
 
-        const generalFolderPaths: Paths.GeneralFolders =
-            await getGeneralPaths(renderMachine, SportsDB);
+        const generalFolderPaths: Paths.GeneralFolders = await getGeneralPaths(
+            renderMachine,
+            SportsDB
+        );
 
-        /** 
+        /**
          * get the buleprint of the subfolder structure for the given product.
          */
-        let productSubfolders: CORE.AE.ProductSubFolder[] = 
-            await SportsDB.SELECT(coreTables.product_subfolders,
-            {whereClause: {product_name: edition.product_name}}
-        );
+        let productSubfolders: CORE.AE.ProductSubFolder[] =
+            await SportsDB.SELECT(coreTables.product_subfolders, {
+                whereClause: { product_name: edition.product_name },
+            });
 
         const subFolders = getSubfolderStrucure(
-            productSubfolders, renderMachine, edition, brand, product, generalFolderPaths
+            productSubfolders,
+            renderMachine,
+            edition,
+            brand,
+            product,
+            generalFolderPaths
         );
-    
-        const templateMainLayers = await BackofficeDB.SELECT(TMPTables.templateMainLayers, {whereClause: {template_name: templateName}});
-        let templateClusters: Template.Record.Cluster[] = await BackofficeDB.SELECT(TMPTables.templateClusters, {whereClause: {template_name: templateName}});
-        
+
+        const templateMainLayers = await BackofficeDB.SELECT(
+            TMPTables.templateMainLayers,
+            { whereClause: { template_name: templateName } }
+        );
+        let templateClusters: Template.Record.Cluster[] =
+            await BackofficeDB.SELECT(TMPTables.templateClusters, {
+                whereClause: { template_name: templateName },
+            });
+
         // HARDCODED-MODIFY
         // removing manually the second cluster
-        templateClusters = templateClusters.filter(t => t.cluster_index === 1);
-        
-        let templateElements: Template.Record.Element[] = await BackofficeDB.SELECT(TMPTables.templateElements, {whereClause: {template_name: templateName}});
+        templateClusters = templateClusters.filter(
+            (t) => t.cluster_index === 1
+        );
+
+        let templateElements: Template.Record.Element[] =
+            await BackofficeDB.SELECT(TMPTables.templateElements, {
+                whereClause: { template_name: templateName },
+            });
         // HARDCODED-MODIFY
         // removing manually presenter elements
-        templateElements = templateElements.filter(t => t.element_name !== 'presenter');
-        
-        const objectElements: Template.Obj.Element[] = await BackofficeDB.SELECT(TMPTables.objectElements);
-        const elementBluePrints: Template.Element.DB_Blueprint[] = await BackofficeDB.SELECT(TMPTables.elements);
-        const objects: Template.Obj[] = await BackofficeDB.SELECT(TMPTables.objects);
-        const elementActions: Template.Element.Action[] = await BackofficeDB.SELECT(TMPTables.elementActions);
-        const clusterActions: Template.Cluster.Action[] = await BackofficeDB.SELECT(TMPTables.clusterActions);
+        templateElements = templateElements.filter(
+            (t) => t.element_name !== 'presenter'
+        );
+
+        const objectElements: Template.Obj.Element[] =
+            await BackofficeDB.SELECT(TMPTables.objectElements);
+        const elementBluePrints: Template.Element.DB_Blueprint[] =
+            await BackofficeDB.SELECT(TMPTables.elements);
+        const objects: Template.Obj[] = await BackofficeDB.SELECT(
+            TMPTables.objects
+        );
+        const elementActions: Template.Element.Action[] =
+            await BackofficeDB.SELECT(TMPTables.elementActions);
+        const clusterActions: Template.Cluster.Action[] =
+            await BackofficeDB.SELECT(TMPTables.clusterActions);
 
         /**
          * We'll start with getting our raw data
          * then we will manipulate the data to fit the actions scheme
          * and then we'll export a sample json file.
          */
-        // const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} = 
+        // const allNewsItems: {[key in DB.SportName]: DB.Item.JoinedNews[]} =
         //     await SPORTNEWS.getTransItemsByLangAndSport(SportsDB, edition.lang);
 
         // console.log(JSON.stringify(allNewsItems.Basketball, null, 4));
@@ -110,18 +140,18 @@ export default async function process__SNS_AE_News({
             DB: SportsDB,
             edition,
             lang,
-            targetDate
+            targetDate,
         });
-        // const newsItems: DB.Item.JoinedNews[] = 
+        // const newsItems: DB.Item.JoinedNews[] =
         //     await selectMixedNews(allNewsItems);
         // console.log(`newsItems: ${JSON.stringify(newsItems, null, 4)}`);
         // return;
 
         // console.log(`subFolders.presenters: ${JSON.stringify(subFolders.presenters, null, 4)}`);
         // return;
-        // const dailyPresenterFilePaths: DailyPresenterScheme = 
+        // const dailyPresenterFilePaths: DailyPresenterScheme =
         //     await getDailyPresenterScheme(SportsDB, edition, targetDate, subFolders.presenters);
-        
+
         /**
          * CONVERT LAYER TO SOURCES IN DB
          * we want wherever there's a file to be inserted
@@ -132,12 +162,10 @@ export default async function process__SNS_AE_News({
         //     presenter: dailyPresenterFilePaths,
         // }
 
-        const {newsItemElements, standingsElements, scheduleElements} = filterElements(
-            objectElements,
-            elementBluePrints
-        );
+        const { newsItemElements, standingsElements, scheduleElements } =
+            filterElements(objectElements, elementBluePrints);
 
-        const threeFirstItems = newsItems.slice(0,3);
+        const threeFirstItems = newsItems.slice(0, 3);
 
         /**
          * Here we perform the element-level actions of the news items
@@ -152,7 +180,7 @@ export default async function process__SNS_AE_News({
             files,
             trimSyncData,
             targetDate
-        )
+        );
 
         // console.log(`texts: ${JSON.stringify(texts, null, 4)}`);
         // console.log(`files: ${JSON.stringify(files, null, 4)}`);
@@ -179,7 +207,7 @@ export default async function process__SNS_AE_News({
             templateName,
             files,
             trimSyncData
-        )
+        );
 
         // console.log(`trimSyncData: ${JSON.stringify(trimSyncData, null, 4)}`);
         // return;
@@ -212,7 +240,9 @@ export default async function process__SNS_AE_News({
             dbgLevel
         );
 
-        return `${funcName}:\npopulateLog:\n${populateLog}\n${JSON.stringify(axiosResponse.data)}`;
+        return `${funcName}:\npopulateLog:\n${populateLog}\n${JSON.stringify(
+            axiosResponse.data
+        )}`;
     } catch (e) {
         return `${funcName}: ${e}`;
     }
