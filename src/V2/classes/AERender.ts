@@ -143,7 +143,7 @@ export class AERender {
             } catch (error) {
                 const errorMessage = `Failed to spawn process: ${error}`;
                 console.error(errorMessage);
-                appendToLogFile(errorMessage, this.logFileName);
+                appendToLogFile(this.TD, errorMessage, this.logFileName);
                 return reject(new Error(errorMessage));
             }
 
@@ -158,7 +158,7 @@ export class AERender {
                         code: 1,
                         message: abortMessage,
                     };
-                    appendToLogFile(abortMessage, this.logFileName);
+                    appendToLogFile(this.TD, abortMessage, this.logFileName);
                     this.killProcessTree(spawnedProcess.pid!);
                     reject(new Error('Process aborted'));
                 });
@@ -186,7 +186,7 @@ export class AERender {
                 if (!isSpamMessage(output)) {
                     const stdOutMessage = `[AE STDOUT] ${output}`;
                     console.log(stdOutMessage);
-                    appendToLogFile(stdOutMessage, this.logFileName);
+                    appendToLogFile(this.TD, stdOutMessage, this.logFileName);
                 }
 
                 this.parseProgress(output);
@@ -197,7 +197,7 @@ export class AERender {
                 const output = data.toString();
                 const stdErrMessage = `[AE STDERR] ${output}`;
                 console.error(stdErrMessage);
-                appendToLogFile(stdErrMessage, this.logFileName);
+                appendToLogFile(this.TD, stdErrMessage, this.logFileName);
                 stderrData += output;
             });
 
@@ -205,12 +205,12 @@ export class AERender {
                 if (code === 0) {
                     const successMessage = 'Process completed successfully.';
                     console.log(successMessage);
-                    appendToLogFile(successMessage, this.logFileName);
+                    appendToLogFile(this.TD, successMessage, this.logFileName);
                     resolve(stdoutData);
                 } else {
                     const errorMessage = `CLOSE spawnChildProcess code > 0 --- Process exited with code ${code}. Errors: ${stderrData}`;
                     console.error(errorMessage);
-                    appendToLogFile(errorMessage, this.logFileName);
+                    appendToLogFile(this.TD, errorMessage, this.logFileName);
                     reject(new Error(errorMessage));
                 }
             });
@@ -218,7 +218,7 @@ export class AERender {
             spawnedProcess.on('error', (error) => {
                 const errorMessage = `Process error: ${error.message}`;
                 console.error(errorMessage);
-                appendToLogFile(errorMessage, this.logFileName);
+                appendToLogFile(this.TD, errorMessage, this.logFileName);
                 reject(new Error(errorMessage));
             });
         });
@@ -252,7 +252,7 @@ export class AERender {
                     this.frameRate = parseFloat(frameRateMatch[1]);
                     this.frameRateAvailable = true;
                     const message = `Parsed Frame Rate: ${this.frameRate}`;
-                    appendToLogFile(message, this.logFileName);
+                    appendToLogFile(this.TD, message, this.logFileName);
                     // console.log(`Parsed Frame Rate: ${this.frameRate}`);
                 }
             }
@@ -271,7 +271,7 @@ export class AERender {
                     const message = `Parsed Duration: ${JSON.stringify(
                         this.duration
                     )}`;
-                    appendToLogFile(message, this.logFileName);
+                    appendToLogFile(this.TD, message, this.logFileName);
                 }
             }
 
@@ -294,12 +294,12 @@ export class AERender {
                 //     `Progress: ${this.progressPercentage}% (${this.currentFrame}/${this.totalFrames} frames)`
                 // );
                 // const message = `Progress: ${this.progressPercentage}% (${this.currentFrame}/${this.totalFrames} frames)`;
-                // appendToLogFile(message, this.logFileName);
+                // appendToLogFile(this.TD, message, this.logFileName);
             }
         } catch (error) {
             const errorMessage = `Error parsing progress: ${error}`;
             console.warn(errorMessage);
-            appendToLogFile(errorMessage, this.logFileName);
+            appendToLogFile(this.TD, errorMessage, this.logFileName);
         }
     }
 
@@ -366,7 +366,7 @@ export class AERender {
         } catch (error) {
             const errorMessage = `Failed to terminate process tree: ${error}`;
             console.error(errorMessage);
-            appendToLogFile(errorMessage, this.logFileName);
+            appendToLogFile(this.TD, errorMessage, this.logFileName);
         }
     }
     /**
@@ -394,7 +394,7 @@ export class AERender {
         this.progressInterval = setInterval(() => {
             const message = `Current Progress: ${this.progressPercentage}%`;
             console.log(message);
-            appendToLogFile(message, this.logFileName);
+            appendToLogFile(this.TD, message, this.logFileName);
             if (this.progressPercentage >= 100) this.clearIntervals();
         }, progressInterval * 1000);
     }
@@ -413,7 +413,7 @@ export class AERender {
                 const timeoutMessage = `Timeout reached. Aborting process...`;
                 console.error(timeoutMessage);
                 // this.logMessage(timeoutMessage);
-                appendToLogFile(timeoutMessage, this.logFileName);
+                appendToLogFile(this.TD, timeoutMessage, this.logFileName);
                 this.abortController.abort();
                 this.clearIntervals();
             }
@@ -423,7 +423,7 @@ export class AERender {
                 const message = `${this.secondsElapsed} seconds have elapsed.`;
                 console.warn(message);
                 // this.logMessage(message);
-                appendToLogFile(message, this.logFileName);
+                appendToLogFile(this.TD, message, this.logFileName);
             }
         }, 1000);
     }
@@ -451,7 +451,7 @@ export class AERender {
                     const idleProgressErrorMessage = `Progress has remained: ${this.progressPercentage} at least ${allowedIdleSeconds} seconds. Aborting process...`;
                     console.error(idleProgressErrorMessage);
                     // this.logMessage(timeoutMessage);
-                    appendToLogFile(idleProgressErrorMessage, this.logFileName);
+                    appendToLogFile(this.TD, idleProgressErrorMessage, this.logFileName);
                     this.abortController.abort();
                     this.clearIntervals();
                 }
