@@ -29,7 +29,10 @@ import { PATHS } from '../functions/PATHS';
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
 
-export default async function SERVER_MAIN(logToConsole: boolean = true) {
+export default async function SERVER_MAIN(
+    logToConsole: boolean = true, 
+    debugMode: boolean = false
+){
     const funcName = `SERVER_MAIN`;
 
     /**
@@ -49,11 +52,11 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
     /**
      * Log first message to the log file.
      */
-    let nextMessage = `Started test @ ${nowYYYYMMDDhhmmss}`;
-    appendToLogFile(TD, nextMessage, logFileName, logToConsole, 'pink');
+    let nextMessage = `Started test @ ${nowYYYYMMDDhhmmss}${debugMode && ` in debug mode`}`;
+    appendToLogFile(TD, nextMessage, logFileName, logToConsole, debugMode ? 'cyan' : 'pink');
 
     try {
-        // checkIfSystemIsBusy();
+        !debugMode && checkIfSystemIsBusy();
 
         const goOverFreshJobs = async () => {
             const freshJobs: AE.Job[] = await SportsDB.SELECT(TABLES.jobs, {
@@ -79,7 +82,8 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                             job,
                             SportsDB,
                             BackofficeDB,
-                            logFileName
+                            logFileName,
+                            debugMode,
                         );
                     } catch (e) {
                         LOG.message(`${e}`, 'red');
@@ -114,7 +118,8 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                             job,
                             SportsDB,
                             BackofficeDB,
-                            logFileName
+                            logFileName,
+                            debugMode,
                         );
                     } catch (e) {
                         LOG.message(`${e}`, 'red');
@@ -141,7 +146,8 @@ async function editSingleFreshJob(
     job: AE.Job,
     SportsDB: MYSQL_DB,
     BackofficeDB: MYSQL_DB,
-    logFileName: string
+    logFileName: string,
+    debugMode: boolean = false
 ): Promise<void> {
     const funcName = `processSingleFreshJob`;
 
@@ -149,12 +155,11 @@ async function editSingleFreshJob(
 
     try {
         // write systemBusy file
-        fs.writeFileSync(systemBusyFilePath, 'true');
+        !debugMode && fs.writeFileSync(systemBusyFilePath, 'true');
 
         try {
             nextMessage = `Next job: ${job.brand_name} ${job.product_name} ${job.lang}`;
-            // log += nextMessage + '\n';
-            LOG.message(nextMessage, 'pink');
+            appendToLogFile(TD, nextMessage, logFileName, true, 'cyan');
 
             const edition: CORE.Edition = await getEdition(SportsDB, job);
             const brand: CORE.Brand = await getBrand(SportsDB, job.brand_name);
@@ -222,14 +227,13 @@ async function editSingleFreshJob(
             nextMessage = `${job.brand_name} ${job.lang} ${
                 job.product_name
             } failed @ ${getTimestamp()} with error: ${e}`;
-            // log += nextMessage + '\n';
-            LOG.message(nextMessage, 'red');
+            appendToLogFile(TD, nextMessage, logFileName, true, 'red');
         }
     } catch (e) {
         throw `${funcName}: ${e}`;
     } finally {
         // write systemBusy file
-        fs.writeFileSync(systemBusyFilePath, 'false');
+        !debugMode && fs.writeFileSync(systemBusyFilePath, 'false');
     }
 }
 
@@ -239,7 +243,8 @@ async function renderSingleEditedJob(
     job: AE.Job,
     SportsDB: MYSQL_DB,
     BackofficeDB: MYSQL_DB,
-    logFileName: string
+    logFileName: string,
+    debugMode: boolean = false
 ) {
     try {
         // write the initial log message into a new log file
