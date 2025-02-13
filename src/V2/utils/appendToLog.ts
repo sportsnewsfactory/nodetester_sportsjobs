@@ -1,19 +1,32 @@
 import fs from 'fs';
 import path from 'path';
+import { TimeDeltas } from '../classes/TimeDeltas';
 
-type ColorName = 'yellow' | 'green' | 'orange' | 'cyan' | 'white' | 'blue' | 'pink' | 'magenta' | 'red';
+type ColorName =
+    | 'yellow'
+    | 'green'
+    | 'orange'
+    | 'cyan'
+    | 'white'
+    | 'blue'
+    | 'pink'
+    | 'magenta'
+    | 'red';
 
 export function appendToLogFile(
-    message: string, 
-    logFileName: string, 
+    TD: TimeDeltas,
+    message: string,
+    logFileName: string,
     logToConsole: boolean = true,
-    color?: ColorName, 
+    color?: ColorName
 ): void {
-    const wrappedMessage = `${new Date().toLocaleDateString()}: ${message}\n`;
+    const wrappedMessage = `${TD.formatYYYYMMDDhhmmss(
+        new Date()
+    )}: ${message}\n`;
 
-    if (logToConsole){
-        if (color){
-            console.log(`%c${message}`,`color: ${color}`);
+    if (logToConsole) {
+        if (color) {
+            console.log(`%c${message}`, `color: ${color}`);
         }
     }
 

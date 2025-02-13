@@ -26,7 +26,6 @@ import identifyRenderMachine from '../functions/identifyRenderMachine';
 import { getAERenderPath } from '../V2/config/constants/getAERenderPath';
 import { PATHS } from '../functions/PATHS';
 
-
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
 
@@ -40,17 +39,14 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
     BackofficeDB.createPool('BACKOFFICE');
 
     const TD = new TimeDeltas();
-    const logFileName = `test ${TD.editionDateYYYYMMDDhhmmss}.txt`;
+    const nowYYYYMMDDhhmmss = TD.formatYYYYMMDDhhmmss(new Date());
+    const logFileName = `test ${nowYYYYMMDDhhmmss}.txt`;
 
-    let nextMessage = `Started test @ ${TD.editionDateYYYYMMDDhhmmss}`;
-        appendToLogFile(nextMessage, logFileName, logToConsole, 'pink');
+    let nextMessage = `Started test @ ${nowYYYYMMDDhhmmss}`;
+    appendToLogFile(TD, nextMessage, logFileName, logToConsole, 'pink');
 
     try {
-        // create systemBusy file if it doesn't exist
-        if (!fs.existsSync(systemBusyFilePath))
-            fs.writeFileSync(systemBusyFilePath, 'false');
-
-        checkIfSystemIsBusy();
+        // checkIfSystemIsBusy();
 
         const goOverFreshJobs = async () => {
             const freshJobs: AE.Job[] = await SportsDB.SELECT(TABLES.jobs, {
@@ -59,14 +55,26 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 
             if (freshJobs.length === 0) {
                 nextMessage = `No fresh jobs found`;
-                appendToLogFile(nextMessage, logFileName, logToConsole, 'orange')
+                appendToLogFile(
+                    TD,
+                    nextMessage,
+                    logFileName,
+                    logToConsole,
+                    'orange'
+                );
                 // return true;
             } else {
                 throw `first freshJob:\n\n${JSON.stringify(freshJobs[0])}`;
 
                 for (const job of freshJobs) {
                     try {
-                        await editSingleFreshJob(job, SportsDB, BackofficeDB, logFileName);
+                        await editSingleFreshJob(
+                            TD,
+                            job,
+                            SportsDB,
+                            BackofficeDB,
+                            logFileName
+                        );
                     } catch (e) {
                         LOG.message(`${e}`, 'red');
                     }
@@ -83,12 +91,19 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 
             if (editedJobs.length === 0) {
                 nextMessage = `No edited jobs found`;
-                appendToLogFile(nextMessage, logFileName, logToConsole, 'yellow');
+                appendToLogFile(
+                    TD,
+                    nextMessage,
+                    logFileName,
+                    logToConsole,
+                    'orange'
+                );
                 // return true;
             } else {
                 for (const job of editedJobs) {
                     try {
                         await renderSingleEditedJob(
+                            TD,
                             job,
                             SportsDB,
                             BackofficeDB,
@@ -105,19 +120,20 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
-        appendToLogFile(nextMessage, logFileName, logToConsole, 'red');
+        appendToLogFile(TD, nextMessage, logFileName, logToConsole, 'red');
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
-        await cleanup();
+        // await cleanup();
     }
 }
 
 async function editSingleFreshJob(
+    TD: TimeDeltas,
     job: AE.Job,
     SportsDB: MYSQL_DB,
     BackofficeDB: MYSQL_DB,
-    logFileName: string,
+    logFileName: string
 ): Promise<void> {
     const funcName = `processSingleFreshJob`;
 
@@ -210,6 +226,7 @@ async function editSingleFreshJob(
 }
 
 async function renderSingleEditedJob(
+    TD: TimeDeltas,
     job: AE.Job,
     SportsDB: MYSQL_DB,
     BackofficeDB: MYSQL_DB,
@@ -217,7 +234,7 @@ async function renderSingleEditedJob(
 ) {
     try {
         // write the initial log message into a new log file
-        appendToLogFile('Test started', logFileName);
+        appendToLogFile(TD, 'Test started', logFileName, true, 'pink');
 
         const aeRenderPath = getAERenderPath();
 
@@ -289,12 +306,14 @@ async function renderSingleEditedJob(
                     'Render process aborted. error.name === "AbortError"'
                 );
                 appendToLogFile(
+                    TD,
                     'Render process aborted. error.name === "AbortError"',
                     logFileName
                 );
             } else {
                 console.error('Render process failed:', error);
                 appendToLogFile(
+                    TD,
                     `Render process failed: ${(error as Error).message}`,
                     logFileName
                 );
@@ -303,12 +322,15 @@ async function renderSingleEditedJob(
     } catch (e) {
         const errorMessage = `Caught Error: ${e}`;
         console.warn(errorMessage);
-        appendToLogFile(errorMessage, logFileName);
+        appendToLogFile(TD, errorMessage, logFileName);
     }
 }
 
-function checkIfSystemIsBusy(){
-    let systemBusy =
-        fs.readFileSync(systemBusyFilePath).toString() === 'true';
+function checkIfSystemIsBusy() {
+    // create systemBusy file if it doesn't exist
+    if (!fs.existsSync(systemBusyFilePath))
+        fs.writeFileSync(systemBusyFilePath, 'false');
+
+    let systemBusy = fs.readFileSync(systemBusyFilePath).toString() === 'true';
     if (systemBusy) throw `System is busy`;
 }
