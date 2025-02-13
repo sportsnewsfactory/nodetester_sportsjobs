@@ -1,4 +1,5 @@
-import path from 'path';
+import fs from 'fs';
+
 import { CORE } from '../types/CORE';
 import getEdition from './functions/get/edition';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
@@ -8,16 +9,12 @@ import { EDIT, GenericProcessProps } from './functions/process/EDIT';
 import { LOG } from './functions/log/LOG';
 import getTimestamp from './functions/get/timestamp';
 import recognizeError from './functions/error/recognize';
-import handleGoogleDriveReadError from './functions/error/handleGoogleDriveRead';
 import cleanup from './functions/cleanup';
-import writeFinalLog from './functions/log/writeFinalLog';
 import { AE } from '../types/AE';
 import updateJob from './functions/db/updateJob';
 import { TABLES } from '../config/TABLES';
-import fs from 'fs';
 import { VictorResult } from './functions/process/AERenderVersion/processVictorResult';
 import handleGoogleDriveReadError__AERENDER from './functions/error/handleGoogleDriveRead__AERENDER';
-import { AERender } from '../V2/classes/AERender';
 import { TimeDeltas } from '../V2/classes/TimeDeltas';
 import { appendToLogFile } from '../V2/utils/appendToLog';
 import { Paths } from '../types/CORE/Paths';
@@ -44,22 +41,23 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 
     const TD = new TimeDeltas();
     const logFileName = `test ${TD.editionDateYYYYMMDDhhmmss}.txt`;
+
     let nextMessage = `Started test @ ${TD.editionDateYYYYMMDDhhmmss}`;
+        appendToLogFile(nextMessage, logFileName, logToConsole, 'pink');
 
     try {
         // create systemBusy file if it doesn't exist
         if (!fs.existsSync(systemBusyFilePath))
             fs.writeFileSync(systemBusyFilePath, 'false');
 
-        appendToLogFile(nextMessage, logFileName);
+        
 
         // check if system is busy
         let systemBusy =
             fs.readFileSync(systemBusyFilePath).toString() === 'true';
         if (systemBusy) {
             nextMessage = `System is busy`;
-            logToConsole && LOG.message(nextMessage, 'yellow');
-            appendToLogFile(nextMessage, logFileName);
+            appendToLogFile(nextMessage, logFileName, logToConsole, 'yellow');
             return true;
         }
 
@@ -70,8 +68,7 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 
             if (freshJobs.length === 0) {
                 nextMessage = `No fresh jobs found`;
-                LOG.message(nextMessage, 'yellow');
-                log += nextMessage + '\n';
+                appendToLogFile(nextMessage, logFileName, logToConsole, 'orange')
                 // return true;
             } else {
                 for (const job of freshJobs) {
@@ -93,8 +90,7 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
 
             if (editedJobs.length === 0) {
                 nextMessage = `No edited jobs found`;
-                LOG.message(nextMessage, 'yellow');
-                log += nextMessage + '\n';
+                appendToLogFile(nextMessage, logFileName, logToConsole, 'yellow');
                 // return true;
             } else {
                 for (const job of editedJobs) {
@@ -115,13 +111,11 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
-        log += nextMessage + '\n';
-        LOG.message(nextMessage, 'red');
+        appendToLogFile(nextMessage, logFileName, logToConsole, 'red');
     } finally {
         await SportsDB.pool.end();
         await BackofficeDB.pool.end();
         await cleanup();
-        writeFinalLog(log);
     }
 }
 

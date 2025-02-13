@@ -1,11 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
+type ColorName = 'yellow' | 'green' | 'orange' | 'cyan' | 'white' | 'blue' | 'pink' | 'magenta' | 'red';
+
 export function appendToLogFile(
     message: string, 
     logFileName: string, 
-    color?: string, 
-    logToConsole: boolean = true
+    logToConsole: boolean = true,
+    color?: ColorName, 
 ): void {
     const wrappedMessage = `${new Date().toLocaleDateString()}: ${message}\n`;
 
