@@ -1,10 +1,49 @@
 import { DB } from './DB';
 
 export namespace CORE {
+    
+    export type ECN_Edition = {
+        editionName: string;
+        lang: string;
+        schemeName: string;
+        m5Row: string;
+        exportName: string;
+        fileName: string;
+        filePath: string;
+        txtName: string;
+        gender: 'male' | 'female';
+        langFolder: string;
+        dateFormat: string;
+        list: string;
+        nameDaily: string;
+        copyToFolderA: string | null;
+        copyToFolderB: string | null;
+        dyntubeProjectId: string;
+        noonEvening: 'noon' | 'evening';
+        presenter_color_scheme: string;
+        presenter_character: string;
+    };
+
+    export namespace FileAsset {
+        export type AssetType =
+            | 'background'
+            | 'logo'
+            | 'narration'
+            | 'presenter'
+            | 'chart'
+            | 'other';
+
+        export type SourceFolder =
+            | 'destination'
+            | 'local'
+            | 'drive'
+            | 'qnap'
+            | 'bucketIn'
+            | 'bucketOut';
+    }
     /**
      * We start with the types and move on to namespaces
      */
-
     export type FolderType = {
         name: string;
         scope: Keys.Scope;

@@ -3,13 +3,11 @@ import fs from 'fs';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
 import { NAMES } from '../config/DB_NAMES';
 import { DB } from '../types/DB';
-import { RenderMachine } from '../types/RenderMachine';
-import { CORE } from '../types/CORE';
 
 export const FOLDERS = {
     async getAll(
         DB: MYSQL_DB,
-        renderMachine: RenderMachine
+        renderMachine: DB.RenderMachine
     ): Promise<{ [key in DB.Jobs.FolderName]: string }> {
         const foldersArray = await DB.SELECT<DB.Jobs.Folder>(NAMES.folders);
         const folderNames: DB.Jobs.FolderName[] = [

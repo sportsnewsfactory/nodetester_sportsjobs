@@ -11,6 +11,7 @@ export const DB_NAMES: { [key in DB_NAME]: DB_NAME } = {
     Motorsport: 'Motorsport',
     Tennis: 'Tennis',
     GeneralNews: 'GeneralNews',
+    Misc: 'Misc',
 };
 
 export const TABLE_NAMES: { [key in DB_NAME]: { [key: string]: string } } = {
@@ -46,6 +47,7 @@ export const TABLE_NAMES: { [key in DB_NAME]: { [key: string]: string } } = {
     Motorsport: {},
     Tennis: {},
     GeneralNews: {},
+    Misc: {}
 };
 
 export const NAMES = {

@@ -1,4 +1,4 @@
-import getNextJob from './functions/get/nextJob';
+import path from 'path';
 import { CORE } from '../types/CORE';
 import getEdition from './functions/get/edition';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
@@ -29,17 +29,12 @@ import identifyRenderMachine from '../functions/identifyRenderMachine';
 import { getAERenderPath } from '../V2/config/constants/getAERenderPath';
 import { PATHS } from '../functions/PATHS';
 
+
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
 
-export default async function SERVER_MAIN() {
+export default async function SERVER_MAIN(logToConsole: boolean = true) {
     const funcName = `SERVER_MAIN`;
-
-    // init log
-    let log = '';
-    let nextMessage = `${funcName} started @ ${getTimestamp()}`;
-    log += nextMessage + '\n';
-    LOG.message(nextMessage, 'gray');
 
     // init databases
     const SportsDB = new MYSQL_DB();
@@ -47,18 +42,24 @@ export default async function SERVER_MAIN() {
     const BackofficeDB = new MYSQL_DB();
     BackofficeDB.createPool('BACKOFFICE');
 
+    const TD = new TimeDeltas();
+    const logFileName = `test ${TD.editionDateYYYYMMDDhhmmss}.txt`;
+    let nextMessage = `Started test @ ${TD.editionDateYYYYMMDDhhmmss}`;
+
     try {
         // create systemBusy file if it doesn't exist
         if (!fs.existsSync(systemBusyFilePath))
             fs.writeFileSync(systemBusyFilePath, 'false');
+
+        appendToLogFile(nextMessage, logFileName);
 
         // check if system is busy
         let systemBusy =
             fs.readFileSync(systemBusyFilePath).toString() === 'true';
         if (systemBusy) {
             nextMessage = `System is busy`;
-            LOG.message(nextMessage, 'yellow');
-            log += nextMessage + '\n';
+            logToConsole && LOG.message(nextMessage, 'yellow');
+            appendToLogFile(nextMessage, logFileName);
             return true;
         }
 

@@ -1,4 +1,4 @@
-import { EditionType } from '../classes/TimeDeltas';
+import { EditionType } from "../../../../../V2/classes/TimeDeltas";
 
 export type Lang = {
     langCode: string;

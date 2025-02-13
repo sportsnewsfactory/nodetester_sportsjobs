@@ -6,7 +6,6 @@ import fs from 'fs';
 import axios from 'axios';
 
 import { MYSQL_DB } from '../../classes/MYSQL_DB';
-import { GENERALNEWS } from '../SPORTNEWS';
 import { STANDINGS } from '../STANDINGS';
 import identifyRenderMachine from '../identifyRenderMachine';
 import { AE } from '../../types/AE';
@@ -530,14 +529,8 @@ export async function Race2Real_AE_daily_news() {
                 importBin: 'Imports',
             },
             paths: PATHS.getAll__CORE(subFolders, edition),
-            dbg: {
-                dbgLevel: -7,
-                saveExportClose: {
-                    isSave: false,
-                    isExport: false,
-                    isClose: false,
-                },
-            },
+            dbgLevel: -7,
+            aeRenderSeq: [],
         };
 
         for (let text of payload.texts) {

@@ -6,7 +6,7 @@ import reorganizeTransNews from './DB';
 // schedule.scheduleJob('*/3 * * * *', SERVER_MAIN);
 
 // every day at midnight
-schedule.scheduleJob('3 0 * * *', reorganizeTransNews);
+// schedule.scheduleJob('3 0 * * *', reorganizeTransNews);
 
-//  SERVER_MAIN();
-// reorganizeTransNews();CWINZ HI AE_Daily_News failed @ 12/02/2025, 02:09 with error: process__AE_Daily_News:
+ SERVER_MAIN();
+// reorganizeTransNews();

@@ -1,7 +1,25 @@
-import { DayName, dayNames } from '../../features/export/types/DayName';
-import * as scan from '../../utils/scan';
+import * as scan from '../utils/scan';
 
 export type EditionType = 'noon' | 'evening';
+export type DayName =
+  | 'Sunday'
+  | 'Monday'
+  | 'Tuesday'
+  | 'Wednesday'
+  | 'Thursday'
+  | 'Friday'
+  | 'Saturday';
+
+export const dayNames: DayName[] = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
 type DualValue = { [key in EditionType]: number };
 
 class Fdate {

@@ -1,9 +1,9 @@
 import fs from 'fs';
-import { BUCKETS } from '../../config/BUCKETS';
 import { CORE } from '../../types/CORE';
 import { S3Bucket } from './AWS/S3Bucket';
 import { DB } from '../../types/DB';
 import { TimeDeltas } from './TimeDeltas';
+import { BUCKETS } from '../../config/BUCKETS';
 
 export class SeekFile {
     /**

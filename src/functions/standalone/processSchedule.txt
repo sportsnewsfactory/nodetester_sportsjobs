@@ -1,8 +1,8 @@
 import { MYSQL_DB } from "../../classes/MYSQL_DB";
 import { AE } from "../../types/AE";
 import { DB } from "../../types/DB";
-import { GENERALNEWS } from "../SPORTNEWS";
 import { NEXTMATCHES } from "../NEXTMATCHES";
+import { SPORTNEWS } from "../SPORTNEWS";
 import { STANDINGS } from "../STANDINGS";
 import { formatDateAndTime } from "./formatDateTime";
 import { StandingsOptions, generateLayerName } from "./generateLayerName";
@@ -18,7 +18,7 @@ export async function processSchedule(
     
     let texts: AE.Json.TextImport[] = [];
     
-    const items: DB.Item.JoinedNews[] = await GENERALNEWS.getTransItemsByLang(DB, lang);
+    const items: DB.Item.JoinedNews[] = await SPORTNEWS.getTransItemsByLang(DB, lang);
 
     if (items.length === 0) {
         throw new Error(`No items found for lang ${lang} in table RAPID__TRANS_NEWS`);

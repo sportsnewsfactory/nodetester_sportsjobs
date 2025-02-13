@@ -18,6 +18,7 @@ export function getBackgrounds__AE({
             Motorsport: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport'),
             Basketball: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball'),
             Baseball: '',
+            Misc: '',
         }
 
         for (let sportName in backgroundPaths){
@@ -34,6 +35,7 @@ export function getBackgrounds__AE({
             Motorsport: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport')),
             Basketball: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball')),
             Baseball: [],
+            Misc: [],
         }
         
         for (let sportName in backgrounds){

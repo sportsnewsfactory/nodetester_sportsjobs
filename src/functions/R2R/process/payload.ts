@@ -23,14 +23,8 @@ export async function processPayload(
             importBin: 'Imports',
         },
         paths: PATHS.getAll__CORE(subFolders, edition),
-        dbg: {
-            dbgLevel: -7,
-            saveExportClose: {
-                isSave: false,
-                isExport: false,
-                isClose: false,
-            },
-        },
+        dbgLevel: -1,
+        aeRenderSeq: []
     };
 
     for (let text of payload.texts) {

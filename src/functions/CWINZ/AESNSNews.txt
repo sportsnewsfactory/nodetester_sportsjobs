@@ -178,6 +178,7 @@ export async function SNS_AE_News__CORE() {
             Motorsport: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport'),
             Basketball: subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball'),
             Baseball: '',
+            Misc: '',
         }
 
         for (let sportName in backgroundPaths){
@@ -194,6 +195,7 @@ export async function SNS_AE_News__CORE() {
             Motorsport: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Motorsport')),
             Basketball: fs.readdirSync(subFolders.dynamic_backgrounds.replace('$item_specific_sport_name', 'Basketball')),
             Baseball: [],
+            Misc: [],
         }
         
         for (let sportName in backgrounds){

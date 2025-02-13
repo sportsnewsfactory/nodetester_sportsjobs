@@ -1,5 +1,4 @@
 import fs from 'fs';
-import { PS } from '../../types/PS';
 
 export function validateEncrypt(data: PS.DataObj): PS.DataObj {
     try {
