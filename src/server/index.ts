@@ -71,8 +71,6 @@ export default async function SERVER_MAIN(logToConsole: boolean = true) {
                 );
                 // return true;
             } else {
-                throw `first freshJob:\n\n${JSON.stringify(freshJobs[0])}`;
-
                 for (const job of freshJobs) {
                     try {
                         await editSingleFreshJob(
