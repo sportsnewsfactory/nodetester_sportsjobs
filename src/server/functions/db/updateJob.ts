@@ -10,18 +10,21 @@ type UpdateJobProps = {
     nextJob: AE.Job,
     log: string
     newStatus: CORE.Keys.JobStatus
+    prevStatus?: CORE.Keys.JobStatus
 };
 
 export default async function updateJob({
-    SportsDB, nextJob, log, newStatus
+    SportsDB, nextJob, log, newStatus, prevStatus = 'fresh'
 }: UpdateJobProps ){
+    console.log(`Updating job ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang} ${prevStatus} status to ${newStatus}`);
+    
     const updateSQL = `
         UPDATE ${TABLES.jobs}
         SET status = '${newStatus}'
         WHERE brand_name = '${nextJob.brand_name}'
         AND product_name = '${nextJob.product_name}'
         AND lang = '${nextJob.lang}'
-        AND status = 'fresh';
+        AND status = '${prevStatus}';
     `;
 
     const updateResult = await SportsDB.pool.execute(updateSQL);

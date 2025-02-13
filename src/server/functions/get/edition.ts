@@ -5,13 +5,13 @@ import { CORE } from "../../../types/CORE";
 import getNewsItemsByEdition from "./newsItemsByEdition";
 import getTimestamp from "./timestamp";
 
-export default async function getEdition(DB: MYSQL_DB, job: AE.Job): Promise<CORE.Edition> {
+export default async function getEdition(DB: MYSQL_DB, job: AE.Job, targetDate: string): Promise<CORE.Edition> {
     const funcName = `getEdition`;
-    const formattedDate: string = getTimestamp({
-        month: '2-digit', 
-        day: '2-digit', 
-        year: '2-digit'
-    }).replace(/\//g, '');
+    // const formattedDate: string = getTimestamp({
+    //     month: '2-digit', 
+    //     day: '2-digit', 
+    //     year: '2-digit'
+    // }).replace(/\//g, '');
 
     // const DB = new MYSQL_DB();
     // DB.createPool('SPORTS');
@@ -29,8 +29,8 @@ export default async function getEdition(DB: MYSQL_DB, job: AE.Job): Promise<COR
         
         let edition = editions[0];
         edition.project_file_name += '.aep';
-        edition.export_file_name = `${edition.export_file_name.replace('$DATE', formattedDate)}.mp4`;
-        edition.project_save_file_name = `${edition.project_save_file_name.replace('$DATE', formattedDate)}.aep`;
+        edition.export_file_name = `${edition.export_file_name.replace('$DATE', targetDate)}.mp4`;
+        edition.project_save_file_name = `${edition.project_save_file_name.replace('$DATE', targetDate)}.aep`;
 
         return edition;
     } catch (e) {

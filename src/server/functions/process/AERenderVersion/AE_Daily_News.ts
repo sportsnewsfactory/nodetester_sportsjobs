@@ -30,6 +30,7 @@ import { processPayloadWithVictorResult } from './processPayloadWithVictorResult
 import { PATHS } from '../../../../functions/PATHS';
 
 export async function process__AE_Daily_News__AERENDER({
+    TD,
     SportsDB,
     BackofficeDB,
     brand,

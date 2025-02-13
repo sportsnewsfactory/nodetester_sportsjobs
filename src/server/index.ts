@@ -9,7 +9,6 @@ import { EDIT, GenericProcessProps } from './functions/process/EDIT';
 import { LOG } from './functions/log/LOG';
 import getTimestamp from './functions/get/timestamp';
 import recognizeError from './functions/error/recognize';
-import cleanup from './functions/cleanup';
 import { AE } from '../types/AE';
 import updateJob from './functions/db/updateJob';
 import { TABLES } from '../config/TABLES';
@@ -25,6 +24,7 @@ import { DB } from '../types/DB';
 import identifyRenderMachine from '../functions/identifyRenderMachine';
 import { getAERenderPath } from '../V2/config/constants/getAERenderPath';
 import { PATHS } from '../functions/PATHS';
+import { AERender } from '../V2/classes/AERender';
 
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
@@ -62,6 +62,8 @@ export default async function SERVER_MAIN(
             const freshJobs: AE.Job[] = await SportsDB.SELECT(TABLES.jobs, {
                 whereClause: { status: 'fresh' },
             });
+
+            // throw JSON.stringify(freshJobs, null, 4);
 
             if (freshJobs.length === 0) {
                 nextMessage = `No fresh jobs found`;
@@ -149,7 +151,7 @@ async function editSingleFreshJob(
     logFileName: string,
     debugMode: boolean = false
 ): Promise<void> {
-    const funcName = `processSingleFreshJob`;
+    const funcName = `editSingleFreshJob`;
 
     let nextMessage = '';
 
@@ -158,10 +160,10 @@ async function editSingleFreshJob(
         !debugMode && fs.writeFileSync(systemBusyFilePath, 'true');
 
         try {
-            nextMessage = `Next job: ${job.brand_name} ${job.product_name} ${job.lang}`;
+            nextMessage = `${funcName}: Next job: ${job.brand_name} ${job.product_name} ${job.lang}`;
             appendToLogFile(TD, nextMessage, logFileName, true, 'cyan');
 
-            const edition: CORE.Edition = await getEdition(SportsDB, job);
+            const edition: CORE.Edition = await getEdition(SportsDB, job, TD.editionDateYYYYMMDD);
             const brand: CORE.Brand = await getBrand(SportsDB, job.brand_name);
             const product: CORE.Product = await getProduct(
                 SportsDB,
@@ -171,6 +173,7 @@ async function editSingleFreshJob(
             // throw JSON.stringify(edition, null, 4);
 
             let processProps: GenericProcessProps = {
+                TD,
                 SportsDB,
                 BackofficeDB,
                 brand,
@@ -184,6 +187,9 @@ async function editSingleFreshJob(
             let victorResult: VictorResult = await EDIT[product.product_name](
                 processProps
             );
+
+            nextMessage = `victor result: ${JSON.stringify(victorResult, null, 4)}`;
+            appendToLogFile(TD, nextMessage, logFileName, true, 'magenta');
 
             let potentialErrorName = recognizeError(victorResult.message || '');
 
@@ -207,12 +213,11 @@ async function editSingleFreshJob(
             ) {
                 // Let's try not updating the job status to error, so that we can retry the process.
                 // await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
-                throw victorResult.message;
+                // throw victorResult.message;
             }
 
             nextMessage = `Edit completed successfully (${potentialErrorName})`;
-            // log += nextMessage + '\n';
-            LOG.message(nextMessage, 'green');
+            appendToLogFile(TD, nextMessage, logFileName, true, 'green');
 
             await updateJob({
                 SportsDB,
@@ -246,13 +251,15 @@ async function renderSingleEditedJob(
     logFileName: string,
     debugMode: boolean = false
 ) {
+    const funcName = `renderSingleEditedJob`;
+
     try {
         // write the initial log message into a new log file
-        appendToLogFile(TD, 'Test started', logFileName, true, 'pink');
+        appendToLogFile(TD, `${funcName}: Test started`, logFileName, true, 'pink');
 
         const aeRenderPath = getAERenderPath();
 
-        const edition: CORE.Edition = await getEdition(SportsDB, job);
+        const edition: CORE.Edition = await getEdition(SportsDB, job, TD.editionDateYYYYMMDD);
         const brand: CORE.Brand = await getBrand(SportsDB, job.brand_name);
         const product: CORE.Product = await getProduct(
             SportsDB,
@@ -288,32 +295,55 @@ async function renderSingleEditedJob(
 
         const abortController = new AbortController();
 
+        /**
+         * Now we take @param paths.projectSaveFile and generate
+         * @param paths.exportFile
+         */
         const paths: AE.Json.AbsolutePath.Obj = PATHS.getAll__CORE(
             subFolders,
             edition
         );
+        
+        /**
+         * Let's get the file name and export folder path
+         * from @param paths.exportFile
+         */
+        const cleanedExportFilePath = paths.exportFile.replace(/\\/g, '/');
+        const splitExportFilePath = cleanedExportFilePath.split('/');
+        const exportFileName = splitExportFilePath.pop();
+        const exportFolderPath = splitExportFilePath.join('/');
 
-        throw JSON.stringify(paths, null, 4);
+        if (!exportFileName) throw `No export file name found`;
+        if (!exportFolderPath) throw `No export folder path found`;
 
-        const projectFilePath = paths.projectSaveFile;
-        // const exportFolderPath = paths.;
-        const exportFileName = `GivTrade test AERender ${TD.now.getTime()}.mp4`;
         const renderCompName = `0_Main comp_AERender`;
 
-        // const aeRender = new AERender(
-        //     TD,
-        //     logFileName,
-        //     aeRenderPath,
-        //     projectFilePath,
-        //     exportFolderPath,
-        //     exportFileName,
-        //     renderCompName,
-        //     timeLimit,
-        //     abortController
-        // );
+        const aeRender = new AERender(
+            TD,
+            logFileName,
+            aeRenderPath,
+            paths.projectSaveFile,
+            exportFolderPath,
+            exportFileName,
+            renderCompName,
+            timeLimit,
+            abortController
+        );
 
         try {
-            // await aeRender.execPromiseInstance;
+            await aeRender.execPromiseInstance;
+
+            const nextMessage = `Render completed successfully`;
+            appendToLogFile(TD, nextMessage, logFileName, true, 'green');
+
+            await updateJob({
+                SportsDB,
+                nextJob: job,
+                log: '',
+                newStatus: 'rendered',
+                prevStatus: 'edited',
+            });
+            
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 console.warn(

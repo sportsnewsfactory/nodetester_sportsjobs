@@ -1,8 +1,10 @@
 import { CORE } from '../../../types/CORE';
+import { TimeDeltas } from '../../../V2/classes/TimeDeltas';
 import { process__AE_Daily_News__AERENDER } from './AERenderVersion/AE_Daily_News';
 import { process__SNS_AE_News__AERENDER } from './AERenderVersion/SNS_AE_News';
 
 export type GenericProcessProps = {
+    TD: TimeDeltas;
     SportsDB: any;
     BackofficeDB: any;
     brand: CORE.Brand;
