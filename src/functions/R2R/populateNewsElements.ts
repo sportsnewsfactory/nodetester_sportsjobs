@@ -167,7 +167,7 @@ export function populateNewsElements(
                         case 'insertText': {
                             if (value === null) throw `Text value is null in item #${numItem} key: ${key}`;
                             const text: AE.Json.TextImport = {
-                                text: value,
+                                text: value.trim(),
                                 textLayerName: layerCompName,
                                 recursiveInsertion: true, // default
                             };
