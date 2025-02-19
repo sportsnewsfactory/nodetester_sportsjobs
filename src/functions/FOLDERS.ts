@@ -28,9 +28,11 @@ export const FOLDERS = {
         }
 
         for (const folder of foldersArray) {
+            const keyofRenderMachine = folder.root_folder as keyof DB.RenderMachine;
+            const renderMachineFolder: string | number = renderMachine[keyofRenderMachine];
             const absolutePath = path
                 .resolve(
-                    renderMachine[folder.root_folder],
+                    renderMachineFolder.toString(),
                     folder.relative_path
                 )
                 .replace(/\\/g, '/') + '/';

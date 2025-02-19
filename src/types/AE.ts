@@ -8,7 +8,8 @@ import { DB } from './DB';
 export namespace AE {
     export type RenderTemplate =
         | 'transMov'
-        | 'H.264 - Match Render Settings - 40 Mbps';
+        // | 'H.264 - Match Render Settings - 40 Mbps'
+        | 'H.264 - Match Render Settings - 15 Mbps';
 
     export namespace Method {
         export type Trim =

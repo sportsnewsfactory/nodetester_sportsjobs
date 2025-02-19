@@ -25,7 +25,7 @@ export class S3Bucket {
             // Ensure AWS credentials are set
             if (
                 !process.env.AWS_REGION ||
-                !process.env.AWS_ACCESS_KEY ||
+                !process.env.AWS_ACCESS_KEY_ID ||
                 !process.env.AWS_SECRET_ACCESS_KEY
             ) {
                 throw new Error('AWS credentials are not set');
@@ -38,7 +38,7 @@ export class S3Bucket {
             const s3Client = new S3Client({
                 region: process.env.AWS_REGION,
                 credentials: {
-                    accessKeyId: process.env.AWS_ACCESS_KEY,
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
                 },
                 requestHandler: {
@@ -161,8 +161,8 @@ export class S3Bucket {
      */
     async uploadStream(
         key: string,
-        stream: fs.ReadStream, // NodeJS.ReadableStream, // Ensure this is Node.js stream
-        contentType: string
+        stream: fs.ReadStream | Readable, // NodeJS.ReadableStream, // Ensure this is Node.js stream
+        fileType: FileType,
         // progress: Progress
     ): Promise<string> {
         if (!this.client) throw new Error(`S3 client not initialized`);
@@ -173,7 +173,7 @@ export class S3Bucket {
                 Bucket: this.bucketName,
                 Key: key,
                 Body: stream, // Pass Node.js Readable stream directly
-                ContentType: contentType,
+                ContentType: fileType,
             },
             leavePartsOnError: false,
             queueSize: 4, // Number of concurrent parts to upload

@@ -1,32 +1,20 @@
 import fs from 'fs';
 
 import { CORE } from '../types/CORE';
-import getEdition from './functions/get/edition';
 import { MYSQL_DB } from '../classes/MYSQL_DB';
-import getBrand from './functions/get/brand';
 import getProduct from './functions/get/product';
-import { EDIT, GenericProcessProps } from './functions/process/EDIT';
 import { LOG } from './functions/log/LOG';
 import getTimestamp from './functions/get/timestamp';
-import recognizeError from './functions/error/recognize';
 import { AE } from '../types/AE';
-import updateJob from './functions/db/updateJob';
 import { TABLES } from '../config/TABLES';
-import { VictorResult } from './functions/process/AERenderVersion/processVictorResult';
-import handleGoogleDriveReadError__AERENDER from './functions/error/handleGoogleDriveRead__AERENDER';
 import { TimeDeltas } from '../V2/classes/TimeDeltas';
 import { appendToLogFile } from '../V2/utils/appendToLog';
-import { Paths } from '../types/CORE/Paths';
-import { getGeneralPaths } from '../functions/R2R/components/getGeneralPaths';
-import { coreTables } from '../constants/coreTables';
-import { getSubfolderStrucure } from '../functions/R2R/components/getSubfolderStructure';
-import { DB } from '../types/DB';
 import identifyRenderMachine from '../functions/identifyRenderMachine';
-import { getAERenderPath } from '../V2/config/constants/getAERenderPath';
-import { PATHS } from '../functions/PATHS';
-import { AERender } from '../V2/classes/AERender';
 import { editSingleFreshJob } from './functions/process/AERenderVersion/jobs/edit';
 import { renderSingleEditedJob } from './functions/process/AERenderVersion/jobs/render';
+import { S3Bucket } from '../V2/classes/AWS/S3Bucket';
+import { BUCKETS } from '../config/BUCKETS';
+import updateJob from './functions/db/updateJob';
 
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
@@ -133,6 +121,167 @@ export default async function SERVER_MAIN(
         };
 
         await goOverEditedJobs();
+
+        const goOverRenderedJobs = async () => {            
+            const allJobs: AE.Job[] = await SportsDB.SELECT(TABLES.jobs);
+
+            if (allJobs.length === 0){
+                console.log(`No rendered jobs found`);
+                return true;
+            }
+
+            const uniqueLangsSet = [...new Set(allJobs.map(job => job.lang))];
+            const uniqueLangs = Array.from(uniqueLangsSet);
+
+            for (const lang of uniqueLangs){
+                /**
+                 * If the given language has undergone QA (i.e is in either
+                 * 'qa-ready' or 'uploaded' state) and there are more
+                 * jobs in this language that are rendered, we need to upload all of them,
+                 * including that which has undergone QA successfully,
+                 * to the AWS bucket.
+                 * 
+                 * It's possible that there will be a job which has already been uploaded
+                 * white another in the same language is still in rendered state or earlier.
+                 */
+                const aeDailyNewsQAReadyJob = allJobs.find(
+                    (job: AE.Job) => job.lang === lang && 
+                    job.product_name === 'AE_Daily_News' && 
+                    (job.status === 'qa-ready' || job.status === 'uploaded') &&
+                    (TD.formatYYYYMMDD(job.target_date)) === TD.editionDateYYYYMMDD);
+                
+                if (aeDailyNewsQAReadyJob){
+                    console.log(`Job for lang ${lang} is in ${aeDailyNewsQAReadyJob.status} status`);
+                    
+                    /**
+                     * Check if there are any more jobs in rendered state for the given language
+                     * and targetDate, and if so, upload them to the AWS bucket.
+                     */
+                    console.log(`Checking for more jobs in rendered state for lang ${lang} and targetDate ${TD.editionDateYYYYMMDD}`);
+
+                    const readyToBeUploadedJobs = allJobs.filter(
+                        (job: AE.Job) => job.lang === lang &&
+                        (job.status === 'rendered' || job.status === 'qa-ready') &&
+                        (TD.formatYYYYMMDD(job.target_date)) === TD.editionDateYYYYMMDD
+                    );
+
+                    for (const qaReadyJob of readyToBeUploadedJobs){
+                        const product: CORE.Product = await getProduct(SportsDB, qaReadyJob.product_name);
+                
+                        const brandPath = `Z:/Studio/Sports/S_Brands/${qaReadyJob.brand_name}/`;
+                        const productFolder = product.product_path.replace('$brand_path', brandPath);
+                        const exportsFolder = `${productFolder}exports/`
+                        const expectedExportPath = `${exportsFolder}${qaReadyJob.brand_name} ${qaReadyJob.lang} ${TD.editionDateYYYYMMDD}.mp4`;
+
+                        if (fs.existsSync(expectedExportPath)){
+                            console.log(`Export found at ${expectedExportPath}`);
+                            
+                            const clientUploadPath = `UPLOADS/${qaReadyJob.brand_name}/${qaReadyJob.lang}/${product.aws_folder_name}/${TD.editionDateYYYYMMDD}/video.mp4`;
+                            
+                            const bucket = new S3Bucket(BUCKETS.sportsOutgoingMedia, 'WOF');
+                            const stream: fs.ReadStream = fs.createReadStream(expectedExportPath);
+                            const uploadResult: string = await bucket.uploadStream(clientUploadPath, stream, 'video/mp4');
+                            
+                            console.log(`%cuploadResult: ${uploadResult}`, 'color: yellow');
+
+                            const newStatus: CORE.Keys.JobStatus = 'uploaded';
+
+                            // await SportsDB.UPDATE(TABLES.jobs, 
+                            //     { status: newStatus},
+                            //     { 
+                            //         status: qaReadyJob.status, 
+                            //         brand_name: qaReadyJob.brand_name, 
+                            //         lang: qaReadyJob.lang, 
+                            //         product_name: qaReadyJob.product_name 
+                            //     }
+                            // );
+                            await updateJob({ SportsDB, nextJob: qaReadyJob, log: '', newStatus, prevStatus: qaReadyJob.status });
+                        } else {
+                            console.warn(`Export not found at ${expectedExportPath}`);
+                            continue;
+                        }
+                    }
+
+                    continue;
+                } 
+
+                /**
+                 * If the language in question is waiting for QA,
+                 * we skip it.
+                 */
+                const aeDailyNewsQAPendingJob = allJobs.find(
+                    (job: AE.Job) => job.lang === lang && 
+                    job.product_name === 'AE_Daily_News' && 
+                    (job.status === 'qa-pending') &&
+                    (TD.formatYYYYMMDD(job.target_date)) === TD.editionDateYYYYMMDD);
+                
+                if (aeDailyNewsQAPendingJob){
+                    console.log(`Job for lang ${lang} is in ${aeDailyNewsQAPendingJob.status} status`);
+                    continue;
+                }
+
+                /**
+                 * The language in question has no jobs in QA-ready or QA-pending status.
+                 * We'll check if there are any jobs in rendered state for the given language,
+                 * targetDate and AE_Daily_News jobType, and if so, upload them to the AWS bucket QA path.
+                 */
+                const aeDailyNewsLangJobs = allJobs.filter(
+                    (job: AE.Job) => job.lang === lang && 
+                    job.product_name === 'AE_Daily_News' && 
+                    job.status === 'rendered' &&
+                    (TD.formatYYYYMMDD(job.target_date)) === TD.editionDateYYYYMMDD
+                );
+
+                if (aeDailyNewsLangJobs.length === 0){
+                    console.log(`No job in rendered state found for AE_Daily_News ${lang} targetDate: ${TD.editionDateYYYYMMDD}`);
+                    continue;
+                }
+
+                /**
+                 * Whether there's one or more jobs in rendered state for AE_Daily_News
+                 * in the given language and targetDate, we'll take the first one.
+                 */
+                const firstJob = aeDailyNewsLangJobs[0];
+
+                const product: CORE.Product = await getProduct(SportsDB, firstJob.product_name);
+                
+                const brandPath = `Z:/Studio/Sports/S_Brands/${firstJob.brand_name}/`;
+                const productFolder = product.product_path.replace('$brand_path', brandPath);
+                const exportsFolder = `${productFolder}exports/`
+                const expectedExportPath = `${exportsFolder}${firstJob.brand_name} ${firstJob.lang} ${TD.editionDateYYYYMMDD}.mp4`;
+
+                if (fs.existsSync(expectedExportPath)){
+                    console.log(`Export found at ${expectedExportPath}`);
+                    
+                    const qaUploadPath = `QA/${firstJob.lang}/${TD.editionDateYYYYMMDD}.mp4`;
+                    
+                    const bucket = new S3Bucket(BUCKETS.sportsOutgoingMedia, 'WOF');
+                    const stream: fs.ReadStream = fs.createReadStream(expectedExportPath);
+                    const uploadResult: string = await bucket.uploadStream(qaUploadPath, stream, 'video/mp4');
+                    
+                    console.log(`%cuploadResult: ${uploadResult}`, 'color: yellow');
+
+                    const newStatus: CORE.Keys.JobStatus = 'qa-pending';
+
+                    // await SportsDB.UPDATE(TABLES.jobs, 
+                    //     { status: newStatus}, 
+                    //     {
+                    //         status: firstJob.status, 
+                    //         brand_name: firstJob.brand_name, 
+                    //         lang: firstJob.lang, 
+                    //         product_name: firstJob.product_name 
+                    //     }
+                    // );
+                    await updateJob({ SportsDB, nextJob: firstJob, log: '', newStatus, prevStatus: firstJob.status });
+                } else {
+                    console.warn(`Export not found at ${expectedExportPath}`);
+                    continue;
+                }
+            }
+
+        };
+
+        await goOverRenderedJobs();
     } catch (e) {
         // handle error
         nextMessage = `${funcName} failed @ ${getTimestamp()} with error: ${e}`;
@@ -146,8 +295,10 @@ export default async function SERVER_MAIN(
 
 function checkIfSystemIsBusy() {
     // create systemBusy file if it doesn't exist
-    if (!fs.existsSync(systemBusyFilePath))
+    if (!fs.existsSync(systemBusyFilePath)){
+        console.log(`Creating systemBusy file at ${systemBusyFilePath}`);
         fs.writeFileSync(systemBusyFilePath, 'false');
+    }
 
     let systemBusy = fs.readFileSync(systemBusyFilePath).toString() === 'true';
     if (systemBusy) throw `System is busy`;

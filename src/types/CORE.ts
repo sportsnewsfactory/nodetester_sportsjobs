@@ -61,6 +61,7 @@ export namespace CORE {
     export type Product = {
         product_name: Keys.Product;
         product_path: string;
+        aws_folder_name: string;
     };
 
     // converting to distinct types...

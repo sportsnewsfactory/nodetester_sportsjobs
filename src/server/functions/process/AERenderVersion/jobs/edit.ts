@@ -67,7 +67,7 @@ export async function editSingleFreshJob(
             nextMessage = `victor result: ${JSON.stringify(victorResult, null, 4)}`;
             appendToLogFile(TD, nextMessage, logFileName, true, 'magenta');
 
-            let potentialErrorName = recognizeError(victorResult.message || '');
+            let potentialErrorName = recognizeError(victorResult.status || '');
 
             // only in the event of a googleDriveRead error, we'll retry the process.
             if (potentialErrorName === 'googleDriveRead')
@@ -77,7 +77,9 @@ export async function editSingleFreshJob(
                     victorResult,
                 });
 
-            potentialErrorName = recognizeError(victorResult.message || '');
+            potentialErrorName = recognizeError(victorResult.status || '');
+
+            console.log(`potentialErrorName: ${potentialErrorName}`);
 
             // if there's an error that is not of the following types, throw the result.
             if (
@@ -89,7 +91,7 @@ export async function editSingleFreshJob(
             ) {
                 // Let's try not updating the job status to error, so that we can retry the process.
                 // await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
-                // throw victorResult.message;
+                throw victorResult;
             }
 
             nextMessage = `Edit completed successfully (${potentialErrorName})`;

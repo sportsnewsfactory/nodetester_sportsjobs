@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { MYSQL_DB } from "../../../../../classes/MYSQL_DB";
 import { coreTables } from "../../../../../constants/coreTables";
 import identifyRenderMachine from "../../../../../functions/identifyRenderMachine";
@@ -17,6 +18,8 @@ import getBrand from "../../../get/brand";
 import getEdition from "../../../get/edition";
 import getProduct from "../../../get/product";
 
+const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
+
 export async function renderSingleEditedJob(
     RM: DB.RenderMachine,
     TD: TimeDeltas,
@@ -29,8 +32,11 @@ export async function renderSingleEditedJob(
     const funcName = `renderSingleEditedJob`;
 
     try {
+        // write systemBusy file
+        !debugMode && fs.writeFileSync(systemBusyFilePath, 'true');
+
         // write the initial log message into a new log file
-        appendToLogFile(TD, `${funcName}: Test started`, logFileName, true, 'pink');
+        appendToLogFile(TD, `${funcName}: renderSingleEditedJob started${debugMode && ` in debug mode`}`, logFileName, true, 'pink');
 
         const aeRenderPath = getAERenderPath();
 
@@ -142,5 +148,8 @@ export async function renderSingleEditedJob(
         const errorMessage = `Caught Error: ${e}`;
         console.warn(errorMessage);
         appendToLogFile(TD, errorMessage, logFileName);
+    } finally {
+        // write systemBusy file
+        !debugMode && fs.writeFileSync(systemBusyFilePath, 'false');
     }
 }

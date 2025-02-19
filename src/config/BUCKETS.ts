@@ -1,4 +1,6 @@
 export const BUCKETS = {
-    incomingMedia: 'video-factory-incoming-media',
-    outgoingMedia: 'video-factory-outgoing-media',
+    sportsMediaLibrary: "videofactory-sports-media-library",
+    economicNewsMediaLibrary: "videofactory-economicnews-media-library",
+    sportsOutgoingMedia: "videofactory-sports-outgoing-media",
+    economicNewsOutgoingMedia: "videofactory-economicnews-outgoing-media",
 };

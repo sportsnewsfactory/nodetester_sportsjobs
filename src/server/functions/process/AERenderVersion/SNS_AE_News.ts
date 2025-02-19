@@ -49,7 +49,7 @@ export async function process__SNS_AE_News__AERENDER({
             texts: [],
             files: [],
             trimSyncData: [],
-            aeRenderSeq: ['H.264 - Match Render Settings - 40 Mbps'],
+            aeRenderSeq: ['H.264 - Match Render Settings - 15 Mbps'],
         };
         const { introDate, targetDate } = getIntroDate(lang.date_format);
 

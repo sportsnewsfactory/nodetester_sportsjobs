@@ -88,7 +88,7 @@ export class SeekFile {
         edition: CORE.ECN_Edition,
         TD: TimeDeltas,
         renderMachine: DB.RenderMachine,
-        bucketName: string = BUCKETS.incomingMedia
+        bucketName: string = BUCKETS.sportsOutgoingMedia
     ): Promise<SeekFile> {
         const instance = new SeekFile(fileName, assetType);
 
@@ -226,7 +226,7 @@ export class SeekFile {
         return fs.existsSync(this.drive);
     }
     private async existsInBucketIn(
-        bucketName: string = BUCKETS.incomingMedia
+        bucketName: string = BUCKETS.sportsOutgoingMedia
     ): Promise<boolean> {
         const bucket = new S3Bucket(bucketName, 'TOF');
         if (this.bucketIn === null) return false;
