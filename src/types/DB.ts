@@ -1,12 +1,20 @@
-import { AE } from './AE';
+import { AE } from "./AE";
 
 export namespace DB {
+    export type QARecord = {
+        lang: string;
+        is_video_uploaded: boolean;
+        is_lang_approved: boolean;
+        forEdition: Date;
+        updated_at: Date;
+    };
+
     export type Lang = {
         lang: string;
         date_format: string;
         allowed_chars: string;
-    }
-    
+    };
+
     export type RenderMachine = {
         name: string;
         os: string;
@@ -18,7 +26,7 @@ export namespace DB {
         machine_type: string;
         average_edition_rendering_time_in_seconds: number;
     };
-    
+
     export type TeamBase = {
         id: string;
         name: string;
@@ -38,13 +46,13 @@ export namespace DB {
     ) & { team_name: string };
 
     export type SportName =
-        | 'Football'
-        | 'Basketball'
-        | 'Tennis'
-        | 'Motorsport'
-        | 'Cricket'
-        | 'Baseball'
-        | 'Misc'
+        | "Football"
+        | "Basketball"
+        | "Tennis"
+        | "Motorsport"
+        | "Cricket"
+        | "Baseball"
+        | "Misc";
 
     export type Sport = {
         id: string; // needs converting to number
@@ -132,7 +140,7 @@ export namespace DB {
         };
     }
     export namespace Basketball {
-        export type Standings = Omit<StandingsBase, 'matches' | 'points'> & {
+        export type Standings = Omit<StandingsBase, "matches" | "points"> & {
             streak: string;
             percentage: string;
         };
@@ -151,7 +159,7 @@ export namespace DB {
          * as the original GeneralNews item contains logo, background, etc.
          * which we don't need to store these per translation.
          */
-        export type TransNews = Omit<NewsBase, 'id'> & {
+        export type TransNews = Omit<NewsBase, "id"> & {
             item_id: string; // references the id of the news item
             //sport_id: string;
             lang: string;
@@ -197,33 +205,40 @@ export namespace DB {
 
     export namespace Jobs {
         export namespace Mapping {
-            export type EditionKey = 'presenter';
+            export type EditionKey = "presenter";
             export type StandingTextKey =
-                | 'team_name'
-                | 'position'
-                | 'wins'
-                | 'losses';
-            export type ItemTextKey = 'headline' | 'sub_headline';
-            export type ItemFileKey = 'narration' | 'background' | 'logo';
-            export type ScheduleKey = 'date' | 'time' | 'home_team' | 'away_team';
+                | "team_name"
+                | "position"
+                | "wins"
+                | "losses";
+            export type ItemTextKey = "headline" | "sub_headline";
+            export type ItemFileKey = "narration" | "background" | "logo";
+            export type ScheduleKey =
+                | "date"
+                | "time"
+                | "home_team"
+                | "away_team";
 
             export type Scheme = {
-                [key in StandingTextKey | ItemTextKey | ItemFileKey | EditionKey | ScheduleKey ]: (
-                    ...params: any[]
-                ) => string;
+                [key in
+                    | StandingTextKey
+                    | ItemTextKey
+                    | ItemFileKey
+                    | EditionKey
+                    | ScheduleKey]: (...params: any[]) => string;
             };
 
-            export type ContentType = 'schedule' | 'standings' | 'item';
+            export type ContentType = "schedule" | "standings" | "item";
         }
 
         export type FolderName =
-            | 'narration'
-            | 'backgrounds'
-            | 'logos'
-            | 'exports'
-            | 'projects'
-            | 'projsaves'
-            | 'presenters';
+            | "narration"
+            | "backgrounds"
+            | "logos"
+            | "exports"
+            | "projects"
+            | "projsaves"
+            | "presenters";
 
         export type Folder = {
             name: FolderName;
@@ -246,7 +261,7 @@ export namespace DB {
             day: string;
             color: string;
             gender: string;
-        }
+        };
 
         export type Blueprint = {
             name: string;
