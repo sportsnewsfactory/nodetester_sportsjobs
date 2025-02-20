@@ -24,7 +24,8 @@ const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
 
 export default async function SERVER_MAIN(
     logToConsole: boolean = true,
-    debugMode: boolean = false
+    debugMode: boolean = false,
+    customDate?: Date
 ) {
     const funcName = `SERVER_MAIN`;
 
@@ -38,7 +39,7 @@ export default async function SERVER_MAIN(
     BackofficeDB.createPool("BACKOFFICE");
 
     const RM = await identifyRenderMachine(SportsDB);
-    const TD = new TimeDeltas();
+    const TD = new TimeDeltas(customDate);
     const nowYYYYMMDDhhmmss = TD.formatYYYYMMDDhhmmss(new Date());
     const logFileName = `${nowYYYYMMDDhhmmss}.txt`;
 
