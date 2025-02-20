@@ -36,7 +36,7 @@ export async function renderSingleEditedJob(
         !debugMode && fs.writeFileSync(systemBusyFilePath, 'true');
 
         // write the initial log message into a new log file
-        appendToLogFile(TD, `${funcName}: renderSingleEditedJob started${debugMode && ` in debug mode`}`, logFileName, true, 'pink');
+        appendToLogFile(TD, `${funcName}: renderSingleEditedJob started${debugMode ? ' in debug mode' : ''}`, logFileName, true, 'pink');
 
         const aeRenderPath = getAERenderPath();
 
@@ -122,7 +122,7 @@ export async function renderSingleEditedJob(
                 nextJob: job,
                 log: '',
                 newStatus: 'rendered',
-                prevStatus: 'edited',
+                dateString: TD.editionDateYYYYMMDD,
             });
             
         } catch (error) {

@@ -10,25 +10,31 @@ type UpdateJobProps = {
     nextJob: AE.Job,
     log: string
     newStatus: CORE.Keys.JobStatus
-    prevStatus?: CORE.Keys.JobStatus
+    dateString: string
 };
 
 export default async function updateJob({
-    SportsDB, nextJob, log, newStatus, prevStatus = 'fresh'
+    SportsDB, nextJob, log, newStatus, dateString
 }: UpdateJobProps ){
-    console.log(`Updating job ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang} ${prevStatus} status to ${newStatus}`);
+    const funcName = 'updateJob';
+    try {
+        console.log(`Updating job ${nextJob.brand_name} ${nextJob.product_name} ${nextJob.lang} ${dateString} status to ${newStatus}`);
     
-    const updateSQL = `
-        UPDATE ${TABLES.jobs}
-        SET status = '${newStatus}'
-        WHERE brand_name = '${nextJob.brand_name}'
-        AND product_name = '${nextJob.product_name}'
-        AND lang = '${nextJob.lang}'
-        AND status = '${prevStatus}';
-    `;
+        const updateSQL = `
+            UPDATE ${TABLES.jobs}
+            SET status = '${newStatus}'
+            WHERE brand_name = '${nextJob.brand_name}'
+            AND product_name = '${nextJob.product_name}'
+            AND lang = '${nextJob.lang}'
+            AND target_date = '${dateString}'
+        `;
 
-    const updateResult = await SportsDB.pool.execute(updateSQL);
-    if ((updateResult[0] as RowDataPacket).affectedRows === 1) 
-        LOG.consoleAndWrite(log, `Job status updated to ${newStatus}`, 'green');
-    else throw `Job status not updated to ${newStatus}`;
+        const updateResult = await SportsDB.pool.execute(updateSQL);
+        if ((updateResult[0] as RowDataPacket).affectedRows === 1) 
+            LOG.consoleAndWrite(log, `Job status updated to ${newStatus}`, 'green');
+        else throw `Job status not updated to ${newStatus}`;
+    } catch (e) {
+        throw `${funcName}: ${e}`;
+    }
+    
 }

@@ -22,13 +22,18 @@ export default async function uploadSingleJob(
             qaReadyJob.product_name
         );
 
-        const brandPath = `Z:/Studio/Sports/S_Brands/${qaReadyJob.brand_name}/`;
+        const brandPath = `Z:/Studio/Sports/S_Brands/${qaReadyJob.brand_name}`;
         const productFolder = product.product_path.replace(
             "$brand_path",
             brandPath
         );
         const exportsFolder = `${productFolder}exports/`;
-        const expectedExportPath = `${exportsFolder}${qaReadyJob.brand_name} ${qaReadyJob.lang} ${targetDateString}.mp4`;
+        
+        const productFileName = product.product_name === "AE_Daily_News" 
+            ? `${qaReadyJob.brand_name} ${qaReadyJob.lang} ${targetDateString}.mp4`
+            : `${qaReadyJob.brand_name} SNS-news ${qaReadyJob.lang} ${targetDateString}.mp4`;
+
+        const expectedExportPath = `${exportsFolder}${productFileName}`;
 
         if (fs.existsSync(expectedExportPath)) {
             console.log(`Export found at ${expectedExportPath}`);
@@ -55,6 +60,7 @@ export default async function uploadSingleJob(
                 nextJob: qaReadyJob,
                 log: "",
                 newStatus,
+                dateString: targetDateString,
             });
         } else {
             throw `Export not found at ${expectedExportPath}`;

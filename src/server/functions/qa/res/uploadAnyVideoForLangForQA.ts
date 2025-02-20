@@ -32,7 +32,7 @@ export default async function uploadAnyVideoForLangForQA(
         const qa = true;
         const newStatus: CORE.Keys.JobStatus = "qa-pending";
 
-        uploadSingleJob(
+        await uploadSingleJob(
             SportsDB,
             firstQualifiedJob,
             targetDateString,
@@ -40,7 +40,7 @@ export default async function uploadAnyVideoForLangForQA(
             qa
         );
 
-        await SportsDB.UPDATE(
+        const updateResult = await SportsDB.UPDATE(
             TABLES.qa,
             { is_video_uploaded: true },
             {
@@ -49,6 +49,8 @@ export default async function uploadAnyVideoForLangForQA(
                 is_video_uploaded: false,
             }
         );
+
+        if (!updateResult) throw `Failed to update QA record for lang ${lang}`;
     } catch (e) {
         throw `${funcName}: ${e}`;
     }

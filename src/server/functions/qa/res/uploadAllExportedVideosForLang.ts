@@ -32,7 +32,7 @@ export default async function uploadAllExportedVideosForLang(
 
         if (qualifiedJobs.length === 0) {
             console.warn(
-                `No AE_Daily_News jobs found for lang ${lang} for date: ${targetDateString}`
+                `No jobs found for lang ${lang} for date: ${targetDateString}`
             );
             return true;
         }
@@ -41,7 +41,7 @@ export default async function uploadAllExportedVideosForLang(
             const qa = false;
             const newStatus: CORE.Keys.JobStatus = "uploaded";
 
-            uploadSingleJob(SportsDB, job, targetDateString, newStatus, qa);
+            await uploadSingleJob(SportsDB, job, targetDateString, newStatus, qa);
         }
     } catch (e) {
         throw `${funcName}: ${e}`;

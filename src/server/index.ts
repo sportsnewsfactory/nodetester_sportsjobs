@@ -150,6 +150,14 @@ export default async function SERVER_MAIN(
             });
 
             for (const activeLang of activeLangs) {
+                appendToLogFile(
+                    TD,
+                    `QAProcedure for lang: ${activeLang.lang}`,
+                    logFileName,
+                    logToConsole,
+                    'cyan'
+                );
+                
                 const result = await qaForLang(
                     activeLang.lang,
                     SportsDB,
