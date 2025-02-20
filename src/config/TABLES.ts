@@ -2,6 +2,7 @@ export const TABLES = {
     editions: `config.CORE_L3_editions`,
     jobs: `config.RAPID_L4_jobs`,
     qa: `config.RAPID_L2_daily_qa_status`,
+    langs: `config.CORE_L1_langs`,
 };
 
 export type Sport = "Basketball" | "Cricket" | "Misc" | "Tennis" | "Football";

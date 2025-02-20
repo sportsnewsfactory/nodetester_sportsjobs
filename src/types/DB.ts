@@ -5,7 +5,7 @@ export namespace DB {
         lang: string;
         is_video_uploaded: boolean;
         is_lang_approved: boolean;
-        forEdition: Date;
+        forEdition: string;
         updated_at: Date;
     };
 
