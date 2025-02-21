@@ -102,6 +102,7 @@ export async function editSingleFreshJob(
                 nextJob: job,
                 log: '',
                 newStatus: 'edited',
+                dateString: TD.editionDateYYYYMMDD,
             });
 
             // return victorResult;

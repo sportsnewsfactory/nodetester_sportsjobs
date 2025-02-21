@@ -16,7 +16,7 @@ export const itemFileKeys: DB.Jobs.Mapping.ItemFileKey[] = [
     'logo',
 ];
 
-export const mappingFuncs: DB.Jobs.Mapping.Scheme = {
+export const mappingFuncs = {
     headline: (item: DB.Item.JoinedNews) => `Headline${item.id}`,
     sub_headline: (item: DB.Item.JoinedNews) =>
         `headlinetext${item.id}1`,

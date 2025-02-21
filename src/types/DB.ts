@@ -217,7 +217,11 @@ export namespace DB {
                 | "date"
                 | "time"
                 | "home_team"
-                | "away_team";
+                | "away_team"
+                | "scheduleMatchDate"
+                | "scheduleMatchTime"
+                | "scheduleHomeTeam"
+                | "scheduleAwayTeam";
 
             export type Scheme = {
                 [key in
