@@ -108,18 +108,21 @@ export default async function SERVER_MAIN(
 
                 if (qaRecord.is_lang_approved || wastefulMode) {
                     // We process all fresh jobs
-                    const freshJobsForLang: AE.Job[] = await SportsDB.SELECT(
+                    const jobsForLang: AE.Job[] = await SportsDB.SELECT(
                         TABLES.jobs,
                         {
                             whereClause: {
-                                status: "fresh",
                                 lang,
                                 target_date: TD.editionDateYYYYMMDD,
                             },
                         }
                     );
 
-                    for (const job of freshJobsForLang) {
+                    const freshOrErrorJobsForLang = jobsForLang.filter(
+                        (job) => job.status === "fresh" || job.status === "error"
+                    );
+
+                    for (const job of freshOrErrorJobsForLang) {
                         const result: VictorResult = await editSingleFreshJob(
                             RM,
                             TD,
@@ -132,9 +135,13 @@ export default async function SERVER_MAIN(
 
                         if (result.statusCode !== 200) {
                             if (result.message) {
+                                console.warn(`has message: ${result.message}`);
+                                
                                 const recognizedError = recognizeError(
                                     result.message
                                 );
+
+                                console.warn(`recognizedError: ${recognizedError}`);
 
                                 switch (recognizedError) {
                                     /**
@@ -145,14 +152,13 @@ export default async function SERVER_MAIN(
                                      */
                                     case "aeNotRunning": {
                                         await sendTelegramMessage(
-                                            `After effects or Victor Extension not running on Render 3.
-                                            If someone could please be a darling and switch'em on.`
+                                            `This is a test: After effects or Victor Extension not running on Render 3. If someone could please be a darling and switch'em on.`
                                         );
                                         break;
                                     }
                                     case "missingFonts": {
                                         await sendTelegramMessage(
-                                            `Error in ${job.brand_name} ${job.product_name} ${job.lang}: ${result.message}`
+                                            `This is a test: Error in ${job.brand_name} ${job.product_name} ${job.lang}: ${result.message}`
                                         );
                                         break;
                                     }

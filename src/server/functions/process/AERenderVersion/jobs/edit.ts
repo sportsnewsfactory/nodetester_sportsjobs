@@ -75,7 +75,7 @@ export async function editSingleFreshJob(
             )}`;
             appendToLogFile(TD, nextMessage, logFileName, true, "magenta");
 
-            let potentialErrorName = recognizeError(victorResult.status || "");
+            let potentialErrorName = recognizeError(victorResult.message || "");
 
             // only in the event of a googleDriveRead error, we'll retry the process.
             if (potentialErrorName === "googleDriveRead")
@@ -86,26 +86,14 @@ export async function editSingleFreshJob(
                 });
 
             const victorSecondResult = recognizeError(
-                victorResult.status || ""
+                victorResult.message || ""
             );
 
             console.log(`victorSecondResult: ${victorSecondResult}`);
 
-            if (victorSecondResult === "error") {
-                throw victorResult;
-            }
-
-            // if there's an error that is not of the following types, throw the result.
-            if (
-                !(
-                    potentialErrorName === "success" ||
-                    potentialErrorName === "empty" ||
-                    potentialErrorName === "context"
-                )
-            ) {
-                // Let's try not updating the job status to error, so that we can retry the process.
-                // await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
-                throw victorSecondResult;
+            if (victorSecondResult !== "success") {
+                console.log(`victorSecondResult: ${victorSecondResult} so throwing victorResult.message`);
+                throw victorResult.message;
             }
 
             nextMessage = `Edit completed successfully (${potentialErrorName})`;
@@ -134,6 +122,7 @@ export async function editSingleFreshJob(
             nextMessage = `${job.brand_name} ${job.lang} ${
                 job.product_name
             } failed @ ${getTimestamp()} with error: ${e}`;
+
             appendToLogFile(TD, nextMessage, logFileName, true, "red");
             const updateResult: boolean = await updateJob({
                 SportsDB,

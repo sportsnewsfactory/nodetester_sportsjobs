@@ -3,7 +3,7 @@ export const COMMON: { [key: string]: string } = {
     googleDriveRead: "null is not an object",
     context: "another context is already active",
     success: "success",
-    aeNotRunning: "AGGREGATE",
+    aeNotRunning: "After Effects or the Victor extension are not open on Render3",
     empty: `"result": ""`,
     missingFonts: "The following fonts are missing",
 };
