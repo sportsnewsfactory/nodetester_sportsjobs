@@ -14,6 +14,7 @@ import getProduct from "../../../get/product";
 import getTimestamp from "../../../get/timestamp";
 import { GenericProcessProps, EDIT } from "../../EDIT";
 import { VictorResult } from "../processVictorResult";
+import recognizeErrorV2 from "../../../error/recognizeV2";
 
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
@@ -64,18 +65,16 @@ export async function editSingleFreshJob(
 
             if (!(product.product_name in EDIT))
                 throw `No process found for ${product.product_name}`;
+
             let victorResult: VictorResult = await EDIT[product.product_name](
                 processProps
             );
 
-            nextMessage = `victor result: ${JSON.stringify(
-                victorResult,
-                null,
-                4
-            )}`;
-            appendToLogFile(TD, nextMessage, logFileName, true, "magenta");
+            let potentialErrorName: string = recognizeErrorV2(victorResult);
 
-            let potentialErrorName = recognizeError(victorResult.message || "");
+            if (victorResult.statusCode !== 200){
+                appendToLogFile(TD, `victorResult.statusCode !== 200 first round. Message: ${victorResult.message}`, logFileName, true, "red");
+            }
 
             // only in the event of a googleDriveRead error, we'll retry the process.
             if (potentialErrorName === "googleDriveRead")
@@ -85,14 +84,8 @@ export async function editSingleFreshJob(
                     victorResult,
                 });
 
-            const victorSecondResult = recognizeError(
-                victorResult.message || ""
-            );
-
-            console.log(`victorSecondResult: ${victorSecondResult}`);
-
-            if (victorSecondResult !== "success") {
-                console.log(`victorSecondResult: ${victorSecondResult} so throwing victorResult.message`);
+            if (victorResult.statusCode !== 200){
+                console.warn(`Second round victorResult.statusCode !== 200 so throwing victorResult.message: ${victorResult.message}`);
                 throw victorResult.message;
             }
 
