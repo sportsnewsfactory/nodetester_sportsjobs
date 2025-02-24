@@ -2,6 +2,7 @@ import { MYSQL_DB } from "../../../../classes/MYSQL_DB";
 import { TABLES } from "../../../../config/TABLES";
 import { AE } from "../../../../types/AE";
 import { CORE } from "../../../../types/CORE";
+import { TimeDeltas } from "../../../../V2/classes/TimeDeltas";
 import uploadSingleJob from "./uploadSingleJob";
 
 /**
@@ -11,7 +12,8 @@ import uploadSingleJob from "./uploadSingleJob";
  */
 export default async function uploadAllExportedVideosForLang(
     SportsDB: MYSQL_DB,
-    targetDateString: string,
+    TD: TimeDeltas,
+    logFileName: string,
     lang: string
 ) {
     const funcName = `uploadAllExportedVideosForLang`;
@@ -20,7 +22,7 @@ export default async function uploadAllExportedVideosForLang(
             TABLES.jobs,
             {
                 whereClause: {
-                    target_date: targetDateString,
+                    target_date: TD.editionDateYYYYMMDD,
                     lang,
                 },
             }
@@ -32,7 +34,7 @@ export default async function uploadAllExportedVideosForLang(
 
         if (qualifiedJobs.length === 0) {
             console.warn(
-                `No jobs found for lang ${lang} for date: ${targetDateString}`
+                `No jobs found for lang ${lang} for date: ${TD.editionDateYYYYMMDD}`
             );
             return true;
         }
@@ -41,7 +43,14 @@ export default async function uploadAllExportedVideosForLang(
             const qa = false;
             const newStatus: CORE.Keys.JobStatus = "uploaded";
 
-            await uploadSingleJob(SportsDB, job, targetDateString, newStatus, qa);
+            await uploadSingleJob(
+                SportsDB,
+                TD,
+                job,
+                newStatus,
+                logFileName,
+                qa
+            );
         }
     } catch (e) {
         throw `${funcName}: ${e}`;

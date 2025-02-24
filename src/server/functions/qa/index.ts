@@ -20,13 +20,16 @@ export default async function qaForLang(
          * We start by looking for the QA records
          * where the language has not been processed yet.
          */
-        const qaRecordsForLang: DB.QARecord[] = await SportsDB.SELECT(TABLES.qa, {
-            whereClause: { lang }
-        });
+        const qaRecordsForLang: DB.QARecord[] = await SportsDB.SELECT(
+            TABLES.qa,
+            {
+                whereClause: { lang },
+            }
+        );
 
         let qaRecord = {} as DB.QARecord;
 
-        if (qaRecordsForLang.length === 0){
+        if (qaRecordsForLang.length === 0) {
             appendToLogFile(
                 TD,
                 `No QA records found for lang ${lang}. Let's make one`,
@@ -40,7 +43,7 @@ export default async function qaForLang(
                 (qaRecord) => qaRecord.forEdition === TD.editionDateYYYYMMDD
             );
 
-            if (qaRecordsForDate.length === 0){
+            if (qaRecordsForDate.length === 0) {
                 appendToLogFile(
                     TD,
                     `No QA records found for lang ${lang} for date ${TD.editionDateYYYYMMDD}. Let's make one`,
@@ -55,10 +58,10 @@ export default async function qaForLang(
         }
 
         /**
-         * We now have our QA record for @param target_date. 
+         * We now have our QA record for @param target_date.
          * Let's check if it's been processed.
          */
-        if (qaRecord.is_lang_approved){
+        if (qaRecord.is_lang_approved) {
             appendToLogFile(
                 TD,
                 `Lang ${lang} has been approved. Let's upload all rendered videos`,
@@ -73,14 +76,15 @@ export default async function qaForLang(
              */
             await uploadAllExportedVideosForLang(
                 SportsDB,
-                TD.editionDateYYYYMMDD,
+                TD,
+                logFileName,
                 lang
             );
 
             return;
         }
 
-        if (qaRecord.is_video_uploaded){
+        if (qaRecord.is_video_uploaded) {
             appendToLogFile(
                 TD,
                 `Lang ${lang} has been uploaded but not approved yet. Let's wait for approval`,
@@ -90,7 +94,7 @@ export default async function qaForLang(
             );
             return;
         }
-        
+
         /**
          * Let's check if a long video of this language has been
          * exported and if so let's upload it to the qa folder.
@@ -101,14 +105,9 @@ export default async function qaForLang(
             logFileName,
             logToConsole,
             "magenta"
-        )
-        
-        await uploadAnyVideoForLangForQA(
-            SportsDB,
-            TD.editionDateYYYYMMDD,
-            lang
         );
-        
+
+        await uploadAnyVideoForLangForQA(SportsDB, TD, logFileName, lang);
     } catch (e) {
         throw `${funcName}: ${e}`;
     }
@@ -118,9 +117,9 @@ export async function makeNewQARecord(
     SportsDB: MYSQL_DB,
     lang: string,
     TD: TimeDeltas
-){
+) {
     const funcName = "makeNewQARecord";
-    
+
     try {
         let qaRecord: DB.QARecord = {
             lang: lang,

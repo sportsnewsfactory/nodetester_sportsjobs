@@ -6,12 +6,15 @@ import { CORE } from "../../../../types/CORE";
 import { S3Bucket } from "../../../../V2/classes/AWS/S3Bucket";
 import updateJob from "../../db/updateJob";
 import getProduct from "../../get/product";
+import { appendToLogFile } from "../../../../V2/utils/appendToLog";
+import { TimeDeltas } from "../../../../V2/classes/TimeDeltas";
 
 export default async function uploadSingleJob(
     SportsDB: MYSQL_DB,
+    TD: TimeDeltas,
     qaReadyJob: AE.Job,
-    targetDateString: string,
     newStatus: CORE.Keys.JobStatus,
+    logFileName: string,
     qa: boolean = false
 ) {
     const funcName: string = "uploadSingleJob";
@@ -28,18 +31,19 @@ export default async function uploadSingleJob(
             brandPath
         );
         const exportsFolder = `${productFolder}exports/`;
-        
-        const productFileName = product.product_name === "AE_Daily_News" 
-            ? `${qaReadyJob.brand_name} ${qaReadyJob.lang} ${targetDateString}.mp4`
-            : `${qaReadyJob.brand_name} SNS-news ${qaReadyJob.lang} ${targetDateString}.mp4`;
+
+        const productFileName =
+            product.product_name === "AE_Daily_News"
+                ? `${qaReadyJob.brand_name} ${qaReadyJob.lang} ${TD.editionDateYYYYMMDD}.mp4`
+                : `${qaReadyJob.brand_name} SNS-news ${qaReadyJob.lang} ${TD.editionDateYYYYMMDD}.mp4`;
 
         const expectedExportPath = `${exportsFolder}${productFileName}`;
 
         if (fs.existsSync(expectedExportPath)) {
             console.log(`Export found at ${expectedExportPath}`);
 
-            const qaUploadPath = `QA/${qaReadyJob.lang}/${targetDateString}.mp4`;
-            const clientUploadPath = `UPLOADS/${qaReadyJob.brand_name}/${qaReadyJob.lang}/${product.aws_folder_name}/${targetDateString}/video.mp4`;
+            const qaUploadPath = `QA/${qaReadyJob.lang}/${TD.editionDateYYYYMMDD}.mp4`;
+            const clientUploadPath = `UPLOADS/${qaReadyJob.brand_name}/${qaReadyJob.lang}/${product.aws_folder_name}/${TD.editionDateYYYYMMDD}/video.mp4`;
 
             const uploadPath = qa ? qaUploadPath : clientUploadPath;
 
@@ -53,15 +57,22 @@ export default async function uploadSingleJob(
                 "video/mp4"
             );
 
-            console.log(`%cuploadResult: ${uploadResult}`, "color: yellow");
-
-            await updateJob({
+            const updateResult: boolean = await updateJob({
                 SportsDB,
                 nextJob: qaReadyJob,
-                log: "",
                 newStatus,
-                dateString: targetDateString,
+                dateString: TD.editionDateYYYYMMDD,
             });
+
+            appendToLogFile(
+                TD,
+                `${funcName}: job: ${JSON.stringify(
+                    qaReadyJob
+                )} uploadResult: ${uploadResult} updateResult: ${updateResult}`,
+                logFileName,
+                true,
+                uploadResult && updateResult ? "green" : "red"
+            );
         } else {
             throw `Export not found at ${expectedExportPath}`;
         }

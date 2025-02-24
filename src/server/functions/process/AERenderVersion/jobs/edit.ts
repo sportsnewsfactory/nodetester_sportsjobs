@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from "fs";
 import { MYSQL_DB } from "../../../../../classes/MYSQL_DB";
 import { AE } from "../../../../../types/AE";
 import { CORE } from "../../../../../types/CORE";
@@ -29,17 +29,21 @@ export async function editSingleFreshJob(
 ): Promise<void> {
     const funcName = `editSingleFreshJob`;
 
-    let nextMessage = '';
+    let nextMessage = "";
 
     try {
         // write systemBusy file
-        !debugMode && fs.writeFileSync(systemBusyFilePath, 'true');
+        !debugMode && fs.writeFileSync(systemBusyFilePath, "true");
 
         try {
             nextMessage = `${funcName}: Next job: ${job.brand_name} ${job.product_name} ${job.lang}`;
-            appendToLogFile(TD, nextMessage, logFileName, true, 'cyan');
+            appendToLogFile(TD, nextMessage, logFileName, true, "cyan");
 
-            const edition: CORE.Edition = await getEdition(SportsDB, job, TD.editionDateYYYYMMDD);
+            const edition: CORE.Edition = await getEdition(
+                SportsDB,
+                job,
+                TD.editionDateYYYYMMDD
+            );
             const brand: CORE.Brand = await getBrand(SportsDB, job.brand_name);
             const product: CORE.Product = await getProduct(
                 SportsDB,
@@ -64,46 +68,65 @@ export async function editSingleFreshJob(
                 processProps
             );
 
-            nextMessage = `victor result: ${JSON.stringify(victorResult, null, 4)}`;
-            appendToLogFile(TD, nextMessage, logFileName, true, 'magenta');
+            nextMessage = `victor result: ${JSON.stringify(
+                victorResult,
+                null,
+                4
+            )}`;
+            appendToLogFile(TD, nextMessage, logFileName, true, "magenta");
 
-            let potentialErrorName = recognizeError(victorResult.status || '');
+            let potentialErrorName = recognizeError(victorResult.status || "");
 
             // only in the event of a googleDriveRead error, we'll retry the process.
-            if (potentialErrorName === 'googleDriveRead')
+            if (potentialErrorName === "googleDriveRead")
                 victorResult = await handleGoogleDriveReadError__AERENDER({
                     product,
                     processProps,
                     victorResult,
                 });
 
-            potentialErrorName = recognizeError(victorResult.status || '');
+            const victorSecondResult = recognizeError(
+                victorResult.status || ""
+            );
 
-            console.log(`potentialErrorName: ${potentialErrorName}`);
+            console.log(`victorSecondResult: ${victorSecondResult}`);
+
+            if (victorSecondResult === "error") {
+                throw victorResult;
+            }
 
             // if there's an error that is not of the following types, throw the result.
             if (
                 !(
-                    potentialErrorName === 'success' ||
-                    potentialErrorName === 'empty' ||
-                    potentialErrorName === 'context'
+                    potentialErrorName === "success" ||
+                    potentialErrorName === "empty" ||
+                    potentialErrorName === "context"
                 )
             ) {
                 // Let's try not updating the job status to error, so that we can retry the process.
                 // await updateJob({ SportsDB, nextJob, log, newStatus: 'error' });
-                throw victorResult;
+                throw victorSecondResult;
             }
 
             nextMessage = `Edit completed successfully (${potentialErrorName})`;
-            appendToLogFile(TD, nextMessage, logFileName, true, 'green');
+            appendToLogFile(TD, nextMessage, logFileName, true, "green");
 
-            await updateJob({
+            const updateResult: boolean = await updateJob({
                 SportsDB,
                 nextJob: job,
-                log: '',
-                newStatus: 'edited',
+                newStatus: "edited",
                 dateString: TD.editionDateYYYYMMDD,
             });
+
+            appendToLogFile(
+                TD,
+                updateResult
+                    ? "Job status updated to edited"
+                    : "Failed to update job to edited",
+                logFileName,
+                true,
+                updateResult ? "green" : "red"
+            );
 
             // return victorResult;
         } catch (e) {
@@ -111,12 +134,28 @@ export async function editSingleFreshJob(
             nextMessage = `${job.brand_name} ${job.lang} ${
                 job.product_name
             } failed @ ${getTimestamp()} with error: ${e}`;
-            appendToLogFile(TD, nextMessage, logFileName, true, 'red');
+            appendToLogFile(TD, nextMessage, logFileName, true, "red");
+            const updateResult: boolean = await updateJob({
+                SportsDB,
+                nextJob: job,
+                newStatus: "error",
+                dateString: TD.editionDateYYYYMMDD,
+            });
+
+            appendToLogFile(
+                TD,
+                updateResult
+                    ? "Job status updated to error"
+                    : "Failed to update job to error",
+                logFileName,
+                true,
+                updateResult ? "green" : "red"
+            );
         }
     } catch (e) {
         throw `${funcName}: ${e}`;
     } finally {
         // write systemBusy file
-        !debugMode && fs.writeFileSync(systemBusyFilePath, 'false');
+        !debugMode && fs.writeFileSync(systemBusyFilePath, "false");
     }
 }

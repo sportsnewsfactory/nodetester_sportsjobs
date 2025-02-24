@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from "fs";
 import { MYSQL_DB } from "../../../../../classes/MYSQL_DB";
 import { coreTables } from "../../../../../constants/coreTables";
 import identifyRenderMachine from "../../../../../functions/identifyRenderMachine";
@@ -33,14 +33,26 @@ export async function renderSingleEditedJob(
 
     try {
         // write systemBusy file
-        !debugMode && fs.writeFileSync(systemBusyFilePath, 'true');
+        !debugMode && fs.writeFileSync(systemBusyFilePath, "true");
 
         // write the initial log message into a new log file
-        appendToLogFile(TD, `${funcName}: renderSingleEditedJob started${debugMode ? ' in debug mode' : ''}`, logFileName, true, 'pink');
+        appendToLogFile(
+            TD,
+            `${funcName}: renderSingleEditedJob started${
+                debugMode ? " in debug mode" : ""
+            }`,
+            logFileName,
+            true,
+            "pink"
+        );
 
         const aeRenderPath = getAERenderPath();
 
-        const edition: CORE.Edition = await getEdition(SportsDB, job, TD.editionDateYYYYMMDD);
+        const edition: CORE.Edition = await getEdition(
+            SportsDB,
+            job,
+            TD.editionDateYYYYMMDD
+        );
         const brand: CORE.Brand = await getBrand(SportsDB, job.brand_name);
         const product: CORE.Product = await getProduct(
             SportsDB,
@@ -84,15 +96,15 @@ export async function renderSingleEditedJob(
             subFolders,
             edition
         );
-        
+
         /**
          * Let's get the file name and export folder path
          * from @param paths.exportFile
          */
-        const cleanedExportFilePath = paths.exportFile.replace(/\\/g, '/');
-        const splitExportFilePath = cleanedExportFilePath.split('/');
+        const cleanedExportFilePath = paths.exportFile.replace(/\\/g, "/");
+        const splitExportFilePath = cleanedExportFilePath.split("/");
         const exportFileName = splitExportFilePath.pop();
-        const exportFolderPath = splitExportFilePath.join('/');
+        const exportFolderPath = splitExportFilePath.join("/");
 
         if (!exportFileName) throw `No export file name found`;
         if (!exportFolderPath) throw `No export folder path found`;
@@ -115,18 +127,24 @@ export async function renderSingleEditedJob(
             await aeRender.execPromiseInstance;
 
             const nextMessage = `Render completed successfully`;
-            appendToLogFile(TD, nextMessage, logFileName, true, 'green');
+            appendToLogFile(TD, nextMessage, logFileName, true, "green");
 
-            await updateJob({
+            const updateReslult = await updateJob({
                 SportsDB,
                 nextJob: job,
-                log: '',
-                newStatus: 'rendered',
+                newStatus: "rendered",
                 dateString: TD.editionDateYYYYMMDD,
             });
-            
+
+            appendToLogFile(
+                TD,
+                `Job updated to rendered: ${updateReslult}`,
+                logFileName,
+                true,
+                updateReslult ? "green" : "red"
+            );
         } catch (error) {
-            if ((error as Error).name === 'AbortError') {
+            if ((error as Error).name === "AbortError") {
                 console.warn(
                     'Render process aborted. error.name === "AbortError"'
                 );
@@ -136,7 +154,7 @@ export async function renderSingleEditedJob(
                     logFileName
                 );
             } else {
-                console.error('Render process failed:', error);
+                console.error("Render process failed:", error);
                 appendToLogFile(
                     TD,
                     `Render process failed: ${(error as Error).message}`,
@@ -150,6 +168,6 @@ export async function renderSingleEditedJob(
         appendToLogFile(TD, errorMessage, logFileName);
     } finally {
         // write systemBusy file
-        !debugMode && fs.writeFileSync(systemBusyFilePath, 'false');
+        !debugMode && fs.writeFileSync(systemBusyFilePath, "false");
     }
 }

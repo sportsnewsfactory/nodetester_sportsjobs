@@ -1,7 +1,6 @@
-import { DB } from './DB';
+import { DB } from "./DB";
 
 export namespace CORE {
-    
     export type ECN_Edition = {
         editionName: string;
         lang: string;
@@ -11,7 +10,7 @@ export namespace CORE {
         fileName: string;
         filePath: string;
         txtName: string;
-        gender: 'male' | 'female';
+        gender: "male" | "female";
         langFolder: string;
         dateFormat: string;
         list: string;
@@ -19,27 +18,27 @@ export namespace CORE {
         copyToFolderA: string | null;
         copyToFolderB: string | null;
         dyntubeProjectId: string;
-        noonEvening: 'noon' | 'evening';
+        noonEvening: "noon" | "evening";
         presenter_color_scheme: string;
         presenter_character: string;
     };
 
     export namespace FileAsset {
         export type AssetType =
-            | 'background'
-            | 'logo'
-            | 'narration'
-            | 'presenter'
-            | 'chart'
-            | 'other';
+            | "background"
+            | "logo"
+            | "narration"
+            | "presenter"
+            | "chart"
+            | "other";
 
         export type SourceFolder =
-            | 'destination'
-            | 'local'
-            | 'drive'
-            | 'qnap'
-            | 'bucketIn'
-            | 'bucketOut';
+            | "destination"
+            | "local"
+            | "drive"
+            | "qnap"
+            | "bucketIn"
+            | "bucketOut";
     }
     /**
      * We start with the types and move on to namespaces
@@ -99,68 +98,68 @@ export namespace CORE {
 
     export namespace Keys {
         export type JobStatus =
-            | 'fresh'
-            | 'edited'
-            | 'rendered'
-            | 'qa-ready'
-            | 'qa-pending'
-            | 'archive'
-            | 'uploaded'
-            | 'error';
+            | "fresh"
+            | "edited"
+            | "rendered"
+            | "qa-ready"
+            | "qa-pending"
+            | "archive"
+            | "uploaded"
+            | "error";
 
         export type ExpectedPathVariables =
-            | 'sport'
-            | 'lang'
-            | 'brand_path'
-            | 'product_path'
-            | 'drive_path'
-            | 'qnap_path';
+            | "sport"
+            | "lang"
+            | "brand_path"
+            | "product_path"
+            | "drive_path"
+            | "qnap_path";
 
-        export type Software = 'AE' | 'PS';
+        export type Software = "AE" | "PS";
 
-        export type FolderPath = 'brand' | 'product';
+        export type FolderPath = "brand" | "product";
 
         // every product has these subfolders
-        export type ProductSubFolder__Base = 'saves' | 'exports' | 'templates';
+        export type ProductSubFolder__Base = "saves" | "exports" | "templates";
 
         export type Product =
-            | 'AE_Daily_News'
-            | 'SNS_AE_News'
-            | 'SNS_AE_Schedule'
-            | 'SNS_AE_Ranking'
-            | 'SNS_PS_Schedule'
-            | 'SNS_PS_News'
-            | 'SNS_PS_Ranking'
-            | 'SNS_PS_Scores';
+            | "AE_Daily_News"
+            | "SNS_AE_News"
+            | "SNS_AE_Schedule"
+            | "SNS_AE_Ranking"
+            | "SNS_PS_Schedule"
+            | "SNS_PS_News"
+            | "SNS_PS_Ranking"
+            | "SNS_PS_Scores";
 
-        export type Scope = 'general' | 'product specific' | 'brand specific';
+        export type Scope = "general" | "product specific" | "brand specific";
 
-        export type Lang = 'EN' | 'HI' | 'RO' | 'AR';
+        export type Lang = "EN" | "HI" | "RO" | "AR";
 
         export type RootFolder =
-            | 'drive_path'
-            | 'qnap_path'
-            | 'local_storage_path';
+            | "drive_path"
+            | "qnap_path"
+            | "local_storage_path";
 
         export namespace PS {
             export type ProductSubFolder =
                 | ProductSubFolder__Base
-                | 'static_backgrounds'
-                | 'logos';
+                | "static_backgrounds"
+                | "logos";
         }
 
         export namespace AE {
             export type ProductSubFolder =
                 | ProductSubFolder__Base
-                | 'narration'
-                | 'dynamic_backgrounds'
-                | 'presenters';
+                | "narration"
+                | "dynamic_backgrounds"
+                | "presenters";
 
             export type ExpectedPathVariables =
                 | CORE.Keys.ExpectedPathVariables
-                | 'dynamic_backgrounds'
-                | 'logos'
-                | 'narration';
+                | "dynamic_backgrounds"
+                | "logos"
+                | "narration";
         }
     }
 
