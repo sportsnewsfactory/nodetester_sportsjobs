@@ -5,4 +5,5 @@ export const COMMON: { [key: string]: string } = {
     success: "success",
     aeNotRunning: "AGGREGATE",
     empty: `"result": ""`,
+    missingFonts: "The following fonts are missing",
 };

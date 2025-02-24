@@ -136,14 +136,26 @@ export default async function SERVER_MAIN(
                                     result.message
                                 );
 
-                                if (recognizedError === "aeNotRunning") {
+                                switch (recognizedError) {
                                     /**
                                      * In this case we can't move forward with the editing.
                                      * All editing jobs will fail.
                                      * So we release a message in the bugz group and
                                      * pause the editing process.
                                      */
-                                    await sendTelegramMessage("testing");
+                                    case "aeNotRunning": {
+                                        await sendTelegramMessage(
+                                            `After effects or Victor Extension not running on Render 3.
+                                            If someone could please be a darling and switch'em on.`
+                                        );
+                                        break;
+                                    }
+                                    case "missingFonts": {
+                                        await sendTelegramMessage(
+                                            `Error in ${job.brand_name} ${job.product_name} ${job.lang}: ${result.message}`
+                                        );
+                                        break;
+                                    }
                                 }
 
                                 appendToLogFile(
