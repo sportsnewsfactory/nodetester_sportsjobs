@@ -26,7 +26,7 @@ export async function editSingleFreshJob(
     BackofficeDB: MYSQL_DB,
     logFileName: string,
     debugMode: boolean = false
-): Promise<void> {
+): Promise<VictorResult> {
     const funcName = `editSingleFreshJob`;
 
     let nextMessage = "";
@@ -128,7 +128,7 @@ export async function editSingleFreshJob(
                 updateResult ? "green" : "red"
             );
 
-            // return victorResult;
+            return victorResult;
         } catch (e) {
             // handle error
             nextMessage = `${job.brand_name} ${job.lang} ${
@@ -151,6 +151,12 @@ export async function editSingleFreshJob(
                 true,
                 updateResult ? "green" : "red"
             );
+
+            return {
+                status: "error",
+                statusCode: 500,
+                message: nextMessage,
+            };
         }
     } catch (e) {
         throw `${funcName}: ${e}`;

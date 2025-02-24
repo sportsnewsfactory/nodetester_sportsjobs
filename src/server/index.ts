@@ -12,6 +12,9 @@ import { editSingleFreshJob } from "./functions/process/AERenderVersion/jobs/edi
 import { renderSingleEditedJob } from "./functions/process/AERenderVersion/jobs/render";
 import { DB } from "../types/DB";
 import qaForLang from "./functions/qa";
+import { VictorResult } from "./functions/process/AERenderVersion/processVictorResult";
+import recognizeError from "./functions/error/recognize";
+import sendTelegramMessage from "../API/sendTelegramMessage";
 
 // will be used to check if system is busy
 const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
@@ -117,7 +120,7 @@ export default async function SERVER_MAIN(
                     );
 
                     for (const job of freshJobsForLang) {
-                        await editSingleFreshJob(
+                        const result: VictorResult = await editSingleFreshJob(
                             RM,
                             TD,
                             job,
@@ -126,6 +129,50 @@ export default async function SERVER_MAIN(
                             logFileName,
                             debugMode
                         );
+
+                        if (result.statusCode !== 200) {
+                            if (result.message) {
+                                const recognizedError = recognizeError(
+                                    result.message
+                                );
+
+                                if (recognizedError === "aeNotRunning") {
+                                    /**
+                                     * In this case we can't move forward with the editing.
+                                     * All editing jobs will fail.
+                                     * So we release a message in the bugz group and
+                                     * pause the editing process.
+                                     */
+                                    await sendTelegramMessage("testing");
+                                }
+
+                                appendToLogFile(
+                                    TD,
+                                    recognizedError !== "UNKNOWN"
+                                        ? recognizedError
+                                        : result.message,
+                                    logFileName,
+                                    logToConsole,
+                                    "red"
+                                );
+                            } else {
+                                appendToLogFile(
+                                    TD,
+                                    `Error with no message attached, statusCode: ${result.statusCode}`,
+                                    logFileName,
+                                    logToConsole,
+                                    "red"
+                                );
+                            }
+                        } else {
+                            appendToLogFile(
+                                TD,
+                                `Job ${job.brand_name} ${job.product_name} ${job.lang} edited successfully`,
+                                logFileName,
+                                logToConsole,
+                                "green"
+                            );
+                        }
                     }
                 } else {
                     if (qaRecord.is_video_uploaded) {

@@ -18,9 +18,11 @@
     "dotenv": "^16.4.1",
     "mysql2": "^3.9.1",
     "node-schedule": "^2.1.1",
+    "node-telegram-bot-api": "^0.66.0",
     "ps-tree": "^1.2.0"
   },
   "devDependencies": {
+    "@types/node-telegram-bot-api": "^0.64.7",
     "@types/ps-tree": "^1.1.6"
   }
 }

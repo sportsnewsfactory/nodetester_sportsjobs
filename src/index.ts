@@ -10,5 +10,5 @@ import reorganizeTransNews from "./DB";
 // every day at midnight
 // schedule.scheduleJob('3 0 * * *', reorganizeTransNews);
 
-SERVER_MAIN(true);
+SERVER_MAIN(true, true);
 // reorganizeTransNews();
