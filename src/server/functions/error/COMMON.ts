@@ -1,5 +1,6 @@
 export const COMMON: { [key: string]: string } = {
     aeCrash: "ECONNRESET",
+    aeCrash2: "The extension or AE crashed",
     googleDriveRead: "null is not an object",
     context: "another context is already active",
     success: "success",
