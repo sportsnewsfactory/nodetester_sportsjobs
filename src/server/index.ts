@@ -17,7 +17,7 @@ import recognizeError from "./functions/error/recognize";
 import sendTelegramMessage from "../API/sendTelegramMessage";
 
 // will be used to check if system is busy
-const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
+export const systemBusyFilePath = `G:/My Drive/Sports/systemBusy.txt`;
 
 /**
  * If we're in wasteful mode, we'll
@@ -118,11 +118,15 @@ export default async function SERVER_MAIN(
                         }
                     );
 
-                    const freshOrErrorJobsForLang = jobsForLang.filter(
-                        (job) => job.status === "fresh" || job.status === "error"
+                    const freshJobs = jobsForLang.filter(
+                        (job) => job.status === "fresh"
                     );
 
-                    for (const job of freshOrErrorJobsForLang) {
+                    const errorJobs = jobsForLang.filter(
+                        (job) => job.status === "error"
+                    );
+
+                    for (const job of freshJobs.concat(errorJobs)) {
                         const result: VictorResult = await editSingleFreshJob(
                             RM,
                             TD,
